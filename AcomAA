@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Neuro Image Quiz</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 15px;
+    }
+
+    h2 {
+      margin-top: 10px;
+    }
+
+    #container {
+      position: relative;
+      display: inline-block;
+      max-width: 95vw;
+      max-height: 75vh;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      max-height: 75vh;
+      object-fit: contain;
+      cursor: crosshair;
+      border: 2px solid #333;
+      background: white;
+    }
+
+    canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+    }
+
+    #feedback {
+      margin-top: 12px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #coords {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 18px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Where is the anterior communicating artery (ACom)?</h2>
+
+<div id="container">
+  <img id="brain" src="brain.jpg">
+  <canvas id="overlay"></canvas>
+</div>
+
+<div id="feedback"></div>
+<div id="coords"></div>
+
+<button onclick="resetCard()">Try Again</button>
+
+<script>
+  const img = document.getElementById("brain");
+  const canvas = document.getElementById("overlay");
+  const ctx = canvas.getContext("2d");
+  const feedback = document.getElementById("feedback");
+
+  let answered = false;
+
+  // Change to false when using it for teaching
+  const showCoords = true;
+
+  // Hotspots on the image
+  const zones = [
+    { name: "ACom", x: 359, y: 439, r: 70, correct: true },
+    { name: "Posterior Communicating (PCom)", x: 444, y: 653, r: 40, correct: false },
+    { name: "Anterior Chorodial", x: 515, y: 662, r: 40, correct: false },
+    { name: "Basilar Tip", x: 360, y: 748, r: 70, correct: false },
+    { name: "Basilar Trunk", x: 392, y: 857, r: 70, correct: false },
+    { name: "Anterior Cerebral", x: 378, y: 295, r: 70, correct: false },
+    { name: "Basilar tip", x: 360, y: 748, r: 70, correct: false },
+    { name: "Pcom PCA junction", x: 460, y: 732, r: 40, correct: false },
+    { name: "Internal Carotid (ICA) bifucation", x: 512, y: 606, r: 40, correct: false },
+    { name: "Vertebral Artery", x: 465, y: 1217, r: 70, correct: false },  
+    { name: "Posterior Cerebral (PCA) ", x: 581, y: 814, r: 70, correct: false },
+  ];
+
+  img.onload = function () {
+    resizeCanvas();
+  };
+
+  window.onresize = function () {
+    resizeCanvas();
+  };
+
+  function resizeCanvas() {
+    const rect = img.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+  }
+
+  img.onclick = function (e) {
+    if (answered) return;
+
+    const rect = img.getBoundingClientRect();
+
+    const scaleX = img.naturalWidth / rect.width;
+    const scaleY = img.naturalHeight / rect.height;
+
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    if (showCoords) {
+      document.getElementById("coords").innerText =
+        `x=${Math.round(x)}, y=${Math.round(y)}`;
+    }
+
+    checkAnswer(x, y);
+  };
+
+  function checkAnswer(x, y) {
+    for (const zone of zones) {
+      const dx = x - zone.x;
+      const dy = y - zone.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < zone.r) {
+        if (zone.correct) {
+          drawCircle(zone.x, zone.y, zone.r, "green");
+          feedback.innerText = `✅ Correct — this is the ${zone.name}`;
+          answered = true;
+        } else {
+          drawCircle(x, y, 10, "red");
+          feedback.innerText = `❌ Not quite — that’s the ${zone.name}`;
+        }
+        return;
+      }
+    }
+
+    drawCircle(x, y, 10, "red");
+    feedback.innerText = "❌ Not quite — try again";
+  }
+
+  function drawCircle(x, y, r, color) {
+    const rect = img.getBoundingClientRect();
+
+    const scaleX = rect.width / img.naturalWidth;
+    const scaleY = rect.height / img.naturalHeight;
+
+    ctx.beginPath();
+    ctx.arc(x * scaleX, y * scaleY, r * scaleX, 0, 2 * Math.PI);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  function resetCard() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    feedback.innerText = "";
+    document.getElementById("coords").innerText = "";
+    answered = false;
+  }
+</script>
+
+</body>
+</html>
