@@ -547,20 +547,51 @@ function updateAlarmBand(alarmLevel, alarmMessages) {
 
 let alarmLoopTimeout = null;
 let activeAlarmLevel = "none";
+let alarmPlayToken = 0;
 
 function setAlarmSound(alarmLevel) {
   // alarmLevel should be: "none", "yellow", or "red"
 
-  if (alarmLevel === activeAlarmLevel) {
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+
+  if (alarmLevel === "none") {
+    activeAlarmLevel = "none";
+    alarmPlayToken++;
+    stopAllAlarmSounds();
     return;
   }
 
-  stopAllAlarmSounds();
-  activeAlarmLevel = alarmLevel;
+  const currentSound =
+    alarmLevel === "red" ? redAlarmSound : yellowAlarmSound;
 
-  if (alarmLevel !== "none") {
-    playCurrentAlarmWithGap();
+  const otherSound =
+    alarmLevel === "red" ? yellowAlarmSound : redAlarmSound;
+
+  // Always stop the non-priority sound
+  otherSound.onended = null;
+  otherSound.pause();
+  otherSound.currentTime = 0;
+
+  // If same alarm is already active AND actually playing, leave it alone
+  if (alarmLevel === activeAlarmLevel && !currentSound.paused) {
+    return;
   }
+
+  // Otherwise start/restart the correct alarm
+  activeAlarmLevel = alarmLevel;
+  alarmPlayToken++;
+
+  if (alarmLoopTimeout !== null) {
+    clearTimeout(alarmLoopTimeout);
+    alarmLoopTimeout = null;
+  }
+
+  currentSound.onended = null;
+  currentSound.pause();
+  currentSound.currentTime = 0;
+
+  playCurrentAlarmWithGap(alarmPlayToken);
 }
 
 function stopAllAlarmSounds() {
@@ -572,6 +603,9 @@ function stopAllAlarmSounds() {
     alarmLoopTimeout = null;
   }
 
+  yellowAlarmSound.onended = null;
+  redAlarmSound.onended = null;
+
   yellowAlarmSound.pause();
   yellowAlarmSound.currentTime = 0;
 
@@ -579,7 +613,8 @@ function stopAllAlarmSounds() {
   redAlarmSound.currentTime = 0;
 }
 
-function playCurrentAlarmWithGap() {
+function playCurrentAlarmWithGap(token) {
+  if (token !== alarmPlayToken) return;
   if (activeAlarmLevel === "none") return;
 
   const yellowAlarmSound = document.getElementById("yellowAlarmSound");
@@ -588,6 +623,13 @@ function playCurrentAlarmWithGap() {
   const soundToPlay =
     activeAlarmLevel === "red" ? redAlarmSound : yellowAlarmSound;
 
+  const soundToStop =
+    activeAlarmLevel === "red" ? yellowAlarmSound : redAlarmSound;
+
+  soundToStop.onended = null;
+  soundToStop.pause();
+  soundToStop.currentTime = 0;
+
   soundToPlay.currentTime = 0;
 
   soundToPlay.play().catch(() => {
@@ -595,20 +637,20 @@ function playCurrentAlarmWithGap() {
   });
 
   soundToPlay.onended = () => {
+    if (token !== alarmPlayToken) return;
     if (activeAlarmLevel === "none") return;
 
-   const gap = activeAlarmLevel === "red" ? 50 : 1500;
+    const gap = activeAlarmLevel === "red" ? 50 : 1500;
 
-alarmLoopTimeout = setTimeout(() => {
-  playCurrentAlarmWithGap();
-}, gap);
+    alarmLoopTimeout = setTimeout(() => {
+      playCurrentAlarmWithGap(token);
+    }, gap);
   };
 }
 
 // ------------------------------
 // Alarm visual logic
 // ------------------------------
-
 function applyWarningColours(map, cpp) {
   const hrElement = document.getElementById("hr");
   const spo2Element = document.getElementById("spo2");
@@ -623,103 +665,69 @@ function applyWarningColours(map, cpp) {
   cppElement.className = "value yellow";
   mapElement.className = "";
 
-  let yellowAlarmActive = false;
-  let redAlarmActive = false;
-let yellowMessages = [];
-let redMessages = [];
+  let alarmLevel = "none";
+  let alarmMessages = [];
+
   // ------------------------------
-  // Red alarm thresholds
+  // RED priority alarms
   // ------------------------------
 
-  if (patient.hr < 50 || patient.hr > 130) {
+  if (patient.hr < 50 || patient.hr >= 130) {
     hrElement.classList.add("flash-alarm");
-    redAlarmActive = true;
+    alarmLevel = "red";
+    alarmMessages.push("HR");
   }
 
-  if (patient.spo2 < 88) {
+  if (patient.spo2 < 92) {
     spo2Element.classList.add("flash-alarm");
-    redAlarmActive = true;
+    alarmLevel = "red";
+    alarmMessages.push("SpO₂");
   }
 
   if (map < 65) {
     mapElement.classList.add("flash-alarm");
-    redAlarmActive = true;
+    alarmLevel = "red";
+    alarmMessages.push("MAP");
   }
 
   if (patient.icp > 35) {
     icpElement.classList.add("flash-alarm");
-    redAlarmActive = true;
+    alarmLevel = "red";
+    alarmMessages.push("ICP");
   }
 
   if (cpp < 50) {
     cppElement.classList.add("flash-alarm");
-    redAlarmActive = true;
+    alarmLevel = "red";
+    alarmMessages.push("CPP");
   }
-if (patient.hr < 50 || patient.hr > 130) {
-  hrElement.classList.add("flash-red");
-  redAlarmActive = true;
-  redMessages.push("HR");
-}
 
-if (patient.spo2 < 92) {
-  spo2Element.classList.add("flash-red");
-  redAlarmActive = true;
-  redMessages.push("SpO₂");
-}
-
-if (map < 65) {
-  mapElement.classList.add("flash-red");
-  redAlarmActive = true;
-  redMessages.push("MAP");
-}
-
-if (patient.icp > 35) {
-  icpElement.classList.add("flash-red");
-  redAlarmActive = true;
-  redMessages.push("ICP");
-}
-
-if (cpp < 50) {
-  cppElement.classList.add("flash-red");
-  redAlarmActive = true;
-  redMessages.push("CPP");
-}
   // ------------------------------
-  // Yellow alarm thresholds
+  // YELLOW alarms only if no red alarm active
   // ------------------------------
 
-  if (patient.icp > 20 && patient.icp <= 35) {
-    icpElement.classList.add("flash-alarm");
-    yellowAlarmActive = true;
+  if (alarmLevel !== "red") {
+    if (patient.hr >= 120 && patient.hr < 130) {
+      hrElement.classList.add("flash-alarm");
+      alarmLevel = "yellow";
+      alarmMessages.push("HR");
+    }
+
+    if (patient.icp > 20 && patient.icp <= 35) {
+      icpElement.classList.add("flash-alarm");
+      alarmLevel = "yellow";
+      alarmMessages.push("ICP");
+    }
+
+    if (cpp <= 65 && cpp >= 50) {
+      cppElement.classList.add("flash-alarm");
+      alarmLevel = "yellow";
+      alarmMessages.push("CPP");
+    }
   }
 
-  if (cpp <= 65 && cpp >= 50) {
-    cppElement.classList.add("flash-alarm");
-    yellowAlarmActive = true;
-  }
-  if (patient.icp > 20 && patient.icp <= 35) {
-  icpElement.classList.add("flash-yellow");
-  yellowAlarmActive = true;
-  yellowMessages.push("ICP");
-}
-
-if (cpp <= 65 && cpp >= 50) {
-  cppElement.classList.add("flash-yellow");
-  yellowAlarmActive = true;
-  yellowMessages.push("CPP");
-}
-
- // Red overrides yellow
-if (redAlarmActive) {
-  setAlarmSound("red");
-  updateAlarmBand("red", redMessages);
-} else if (yellowAlarmActive) {
-  setAlarmSound("yellow");
-  updateAlarmBand("yellow", yellowMessages);
-} else {
-  setAlarmSound("none");
-  updateAlarmBand("none", []);
-}
+  setAlarmSound(alarmLevel);
+  updateAlarmBand(alarmLevel, alarmMessages);
 }
 
     // ------------------------------
