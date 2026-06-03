@@ -91,9 +91,28 @@
 <body>
   <h1>Monitor Control</h1>
   <div class="status" id="connectionStatus">Connecting...</div>
-
+<div class="scenario">
+    Scenario: <span id="scenarioValue">--</span>
+  </div>
   <div class="grid">
+<div class="control-card">
+  <div class="label">Autoregulation Sim</div>
 
+  <div class="button-row">
+    <button onclick="simBasicCare()">Optimise position</button>
+<button onclick="simAgitatedRise()">Agitation / ICP rise</button>
+<button onclick="simNoradEarly()">Norad before sedation</button>
+
+  <div class="button-row">
+    <button onclick="simAgitatedRise()">Awake/agitated rise</button>
+    
+  </div>
+
+  <div class="button-row">
+    <button onclick="simSedationFirst()">Sedation increased</button>
+    <button onclick="simNoradAfterSedation()">Norad after sedation</button>
+  </div>
+</div>
     <div class="control-card">
       <div class="label">Heart Rate</div>
       <div class="value"><span id="hrValue">--</span> bpm</div>
@@ -129,31 +148,26 @@
         <button onclick="changeValue('icp', 1)">ICP +1</button>
       </div>
     </div>
-
-  </div>
-
-  <div class="scenario">
-    Scenario: <span id="scenarioValue">--</span>
-  </div>
-
-  <div class="control-card">
-  <div class="label">Autoregulation Sim</div>
-
+<div class="control-card">
+  <div class="label">Respiratory Rate</div>
+  <div class="value"><span id="rrValue">--</span> /min</div>
   <div class="button-row">
-    <button onclick="simStartKinked()">Start SIM</button>
-    <button onclick="simBasicCare()">Basic nursing care</button>
-  </div>
-
-  <div class="button-row">
-    <button onclick="simAgitatedRise()">Awake/agitated rise</button>
-    <button onclick="simNoradEarly()">Norad too early</button>
-  </div>
-
-  <div class="button-row">
-    <button onclick="simSedationFirst()">Sedation increased</button>
-    <button onclick="simNoradAfterSedation()">Norad after sedation</button>
+    <button onclick="changeValue('rr', -1)">RR -1</button>
+    <button onclick="changeValue('rr', 1)">RR +1</button>
   </div>
 </div>
+
+<div class="control-card">
+  <div class="label">EtCO₂</div>
+  <div class="value"><span id="etco2Value">--</span> kPa</div>
+  <div class="button-row">
+    <button onclick="changeValue('etco2', -0.1)">EtCO₂ -0.1</button>
+    <button onclick="changeValue('etco2', 0.1)">EtCO₂ +0.1</button>
+  </div>
+</div>
+  </div>
+
+  
 
 <button class="reset" onclick="resetPatient()">Reset Baseline</button>
 
@@ -233,12 +247,14 @@
     // ------------------------------
 
     function updateControlDisplay() {
-      document.getElementById("hrValue").textContent = patient.hr;
-      document.getElementById("sysValue").textContent = patient.systolic;
-      document.getElementById("diaValue").textContent = patient.diastolic;
-      document.getElementById("icpValue").textContent = patient.icp;
-      document.getElementById("scenarioValue").textContent = patient.scenario;
-    }
+  document.getElementById("hrValue").textContent = patient.hr;
+  document.getElementById("sysValue").textContent = patient.systolic;
+  document.getElementById("diaValue").textContent = patient.diastolic;
+  document.getElementById("icpValue").textContent = patient.icp;
+  document.getElementById("rrValue").textContent = patient.rr;
+  document.getElementById("etco2Value").textContent = Number(patient.etco2).toFixed(1);
+  document.getElementById("scenarioValue").textContent = patient.scenario;
+}
 
     // ------------------------------
     // Controls
@@ -249,10 +265,13 @@
 
       updatedPatient[parameter] += amount;
 
-      updatedPatient.hr = clamp(updatedPatient.hr, 30, 220);
-      updatedPatient.systolic = clamp(updatedPatient.systolic, 50, 240);
-      updatedPatient.diastolic = clamp(updatedPatient.diastolic, 20, 140);
-      updatedPatient.icp = clamp(updatedPatient.icp, 0, 80);
+updatedPatient.hr = clamp(updatedPatient.hr, 30, 220);
+updatedPatient.systolic = clamp(updatedPatient.systolic, 50, 240);
+updatedPatient.diastolic = clamp(updatedPatient.diastolic, 20, 140);
+updatedPatient.icp = clamp(updatedPatient.icp, 0, 80);
+updatedPatient.rr = clamp(updatedPatient.rr, 0, 50);
+updatedPatient.etco2 = clamp(updatedPatient.etco2, 1.0, 12.0);
+updatedPatient.etco2 = Math.round(updatedPatient.etco2 * 10) / 10;
 
       if (updatedPatient.systolic <= updatedPatient.diastolic) {
         updatedPatient.systolic = updatedPatient.diastolic + 5;
