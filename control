@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>iPad Monitor Control</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #050505;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+
+    .status {
+      color: #aaa;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .control-card {
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 14px;
+      background: #111;
+    }
+
+    .label {
+      font-size: 1rem;
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+
+    .value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      min-width: 90px;
+      background: #222;
+      color: white;
+      border: 1px solid #666;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:active {
+      background: #444;
+    }
+
+    .reset {
+      border-color: #ff5555;
+      color: #ff7777;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    .scenario {
+      color: #ffd400;
+      font-size: 1rem;
+      margin-top: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Monitor Control</h1>
+  <div class="status" id="connectionStatus">Connecting...</div>
+
+  <div class="grid">
+
+    <div class="control-card">
+      <div class="label">Heart Rate</div>
+      <div class="value"><span id="hrValue">--</span> bpm</div>
+      <div class="button-row">
+        <button onclick="changeValue('hr', -5)">HR -5</button>
+        <button onclick="changeValue('hr', 5)">HR +5</button>
+      </div>
+    </div>
+
+    <div class="control-card">
+      <div class="label">Systolic BP</div>
+      <div class="value"><span id="sysValue">--</span> mmHg</div>
+      <div class="button-row">
+        <button onclick="changeValue('systolic', -5)">Sys -5</button>
+        <button onclick="changeValue('systolic', 5)">Sys +5</button>
+      </div>
+    </div>
+
+    <div class="control-card">
+      <div class="label">Diastolic BP</div>
+      <div class="value"><span id="diaValue">--</span> mmHg</div>
+      <div class="button-row">
+        <button onclick="changeValue('diastolic', -5)">Dia -5</button>
+        <button onclick="changeValue('diastolic', 5)">Dia +5</button>
+      </div>
+    </div>
+
+    <div class="control-card">
+      <div class="label">ICP</div>
+      <div class="value"><span id="icpValue">--</span> mmHg</div>
+      <div class="button-row">
+        <button onclick="changeValue('icp', -1)">ICP -1</button>
+        <button onclick="changeValue('icp', 1)">ICP +1</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="scenario">
+    Scenario: <span id="scenarioValue">--</span>
+  </div>
+
+  <button class="reset" onclick="resetPatient()">Reset Baseline</button>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    // ------------------------------
+    // Firebase setup
+    // ------------------------------
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQOx2eQRwPFlHC2EmQREtdFYb9Mha7zuQ",
+      authDomain: "neuro-itu-monitor-sim.firebaseapp.com",
+      databaseURL: "https://neuro-itu-monitor-sim-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "neuro-itu-monitor-sim",
+      storageBucket: "neuro-itu-monitor-sim.firebasestorage.app",
+      messagingSenderId: "610257056899",
+      appId: "1:610257056899:web:4763a538136eaf95a8d7b6"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const database = firebase.database();
+    const roomRef = database.ref("simRooms/neuro1");
+
+    // ------------------------------
+    // Local state
+    // ------------------------------
+
+    let patient = {
+      hr: 86,
+      spo2: 98,
+      systolic: 126,
+      diastolic: 74,
+      icp: 14,
+      rr: 16,
+      etco2: 4.8,
+      scenario: "Baseline",
+      sedationGiven: false,
+      timerSeconds: 0
+    };
+
+    const baselinePatient = {
+      hr: 86,
+      spo2: 98,
+      systolic: 126,
+      diastolic: 74,
+      icp: 14,
+      rr: 16,
+      etco2: 4.8,
+      scenario: "Baseline",
+      sedationGiven: false,
+      timerSeconds: 0
+    };
+
+    // ------------------------------
+    // Listen for Firebase changes
+    // ------------------------------
+
+    roomRef.on("value", (snapshot) => {
+      const data = snapshot.val();
+
+      if (!data) {
+        document.getElementById("connectionStatus").textContent = "No data found";
+        return;
+      }
+
+      patient = data;
+
+      document.getElementById("connectionStatus").textContent = "Connected to neuro1";
+      updateControlDisplay();
+    });
+
+    // ------------------------------
+    // Display update
+    // ------------------------------
+
+    function updateControlDisplay() {
+      document.getElementById("hrValue").textContent = patient.hr;
+      document.getElementById("sysValue").textContent = patient.systolic;
+      document.getElementById("diaValue").textContent = patient.diastolic;
+      document.getElementById("icpValue").textContent = patient.icp;
+      document.getElementById("scenarioValue").textContent = patient.scenario;
+    }
+
+    // ------------------------------
+    // Controls
+    // ------------------------------
+
+    function changeValue(parameter, amount) {
+      const updatedPatient = { ...patient };
+
+      updatedPatient[parameter] += amount;
+
+      updatedPatient.hr = clamp(updatedPatient.hr, 30, 220);
+      updatedPatient.systolic = clamp(updatedPatient.systolic, 50, 240);
+      updatedPatient.diastolic = clamp(updatedPatient.diastolic, 20, 140);
+      updatedPatient.icp = clamp(updatedPatient.icp, 0, 80);
+
+      if (updatedPatient.systolic <= updatedPatient.diastolic) {
+        updatedPatient.systolic = updatedPatient.diastolic + 5;
+      }
+
+      updatedPatient.scenario = "Manual control";
+
+      roomRef.update(updatedPatient);
+    }
+
+    function resetPatient() {
+      roomRef.set(baselinePatient);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+  </script>
+</body>
+</html>

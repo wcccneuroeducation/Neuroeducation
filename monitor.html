@@ -360,8 +360,28 @@
 </div>
 
   </div>
-
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script>
+
+    // ------------------------------
+// Firebase setup
+// ------------------------------
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQOx2eQRwPFlHC2EmQREtdFYb9Mha7zuQ",
+  authDomain: "neuro-itu-monitor-sim.firebaseapp.com",
+  databaseURL: "https://neuro-itu-monitor-sim-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "neuro-itu-monitor-sim",
+  storageBucket: "neuro-itu-monitor-sim.firebasestorage.app",
+  messagingSenderId: "610257056899",
+  appId: "1:610257056899:web:4763a538136eaf95a8d7b6"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
+const roomRef = database.ref("simRooms/neuro1");
     // ------------------------------
     // Starting patient values
     // ------------------------------
@@ -381,6 +401,26 @@ const simState = {
   timerInterval: null,
   timerSeconds: 0
 };
+roomRef.on("value", (snapshot) => {
+  const data = snapshot.val();
+
+  if (!data) return;
+
+  patient.hr = data.hr;
+  patient.spo2 = data.spo2;
+  patient.systolic = data.systolic;
+  patient.diastolic = data.diastolic;
+  patient.icp = data.icp;
+  patient.rr = data.rr;
+  patient.etco2 = data.etco2;
+  patient.scenario = data.scenario;
+
+  simState.sedationGiven = data.sedationGiven || false;
+  simState.timerSeconds = data.timerSeconds || 0;
+
+  updateMonitor();
+  updateSimTimerDisplay();
+});
     // ------------------------------
     // Calculation functions
     // ------------------------------
