@@ -20,8 +20,8 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       grid-template-rows: auto 1fr auto;
-      gap: 20px;
-      padding: 20px;
+      gap: 12px;
+      padding: 14px;
       box-sizing: border-box;
     }
 
@@ -61,24 +61,71 @@
     }
 
     .vitals {
-      grid-column: 1 / 4;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      align-content: center;
-    }
-
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: repeat(5, 1fr);
+  gap: 10px;
+  align-content: center;
+}
     .tile {
-      border: 2px solid #333;
-      border-radius: 12px;
-      padding: 20px;
-      background: #050505;
-      min-height: 130px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
+  border: 2px solid #333;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #050505;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.wave-row {
+  border: 2px solid #333;
+  border-radius: 12px;
+  background: #020202;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
 
+.wave-label {
+  width: 70px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #aaa;
+}
+
+.wave-line {
+  flex: 1;
+  height: 2px;
+  background: #222;
+  position: relative;
+}
+
+.wave-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  border-top: 2px dashed #333;
+}
+
+.combined-values {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  white-space: nowrap;
+}
+
+.compact-value {
+  font-size: 2.4rem;
+}
+
+.compact-tile {
+  gap: 6px;
+}
     .label {
       font-size: 1.2rem;
       color: #aaa;
@@ -308,25 +355,26 @@
 
     <div class="vitals">
 
-      <div class="tile">
-        <div class="label">HR</div>
-        <div>
-          <span id="hr" class="value green">86</span>
-          <span class="unit">bpm</span>
-        </div>
-      </div>
+      <div class="wave-row">
+  <div class="wave-label">ECG</div>
+  <div class="wave-line"></div>
+</div>
 
-      <div class="tile">
-        <div class="label">SpO₂</div>
-        <div>
-          <span id="spo2" class="value blue">98</span>
-          <span class="unit">%</span>
-        </div>
-      </div>
+<div class="tile">
+  <div class="label">HR</div>
+  <div>
+    <span id="hr" class="value green">86</span>
+    <span class="unit">bpm</span>
+  </div>
+</div>
 
-      <div class="tile">
+<div class="wave-row">
+  <div class="wave-label">ART</div>
+  <div class="wave-line"></div>
+</div>
+
+<div class="tile">
   <div class="label">BP / MAP</div>
-
   <div class="bp-map-row">
     <div>
       <span id="bp" class="value red small-value">126/74</span>
@@ -340,47 +388,58 @@
   </div>
 </div>
 
-       <!-- <div class="tile">
-        <div class="label">MAP</div>
-        <div>
-          <span id="map" class="value red">--</span>
-          <span class="unit">mmHg</span>
-        </div>
-      </div> -->
+<div class="wave-row">
+  <div class="wave-label">ICP</div>
+  <div class="wave-line"></div>
+</div>
 
-      <div class="tile">
-        <div class="label">ICP</div>
-        <div>
-          <span id="icp" class="value yellow">14</span>
-          <span class="unit">mmHg</span>
-        </div>
-      </div>
-
-      <div class="tile">
-        <div class="label">CPP</div>
-        <div>
-          <span id="cpp" class="value yellow">--</span>
-          <span class="unit">mmHg</span>
-        </div>
-      </div>
-
-      <div class="tile">
-        <div class="label">RR</div>
-        <div>
-          <span id="rr" class="value green">16</span>
-          <span class="unit">/min</span>
-        </div>
-      </div>
-
-      <div class="tile">
-        <div class="label">EtCO₂</div>
-        <div>
-          <span id="etco2" class="value yellow">4.8</span>
-          <span class="unit">kPa</span>
-        </div>
-      </div>
-
+<div class="tile compact-tile">
+  <div class="label">ICP / CPP</div>
+  <div class="combined-values">
+    <div>
+      <span id="icp" class="value yellow compact-value">14</span>
+      <span class="unit">ICP</span>
     </div>
+
+    <div>
+      <span id="cpp" class="value yellow compact-value">--</span>
+      <span class="unit">CPP</span>
+    </div>
+  </div>
+</div>
+
+<div class="wave-row">
+  <div class="wave-label">SpO₂</div>
+  <div class="wave-line"></div>
+</div>
+
+<div class="tile">
+  <div class="label">SpO₂</div>
+  <div>
+    <span id="spo2" class="value blue">98</span>
+    <span class="unit">%</span>
+  </div>
+</div>
+
+<div class="wave-row">
+  <div class="wave-label">EtCO₂</div>
+  <div class="wave-line"></div>
+</div>
+
+<div class="tile compact-tile">
+  <div class="label">RR / EtCO₂</div>
+  <div class="combined-values">
+    <div>
+      <span id="rr" class="value green compact-value">16</span>
+      <span class="unit">RR</span>
+    </div>
+
+    <div>
+      <span id="etco2" class="value yellow compact-value">4.8</span>
+      <span class="unit">kPa</span>
+    </div>
+  </div>
+</div>
 <!--<div class="test-controls">
   <button onclick="changeValue('hr', 5)">HR +5</button>
   <button onclick="changeValue('hr', -5)">HR -5</button>
