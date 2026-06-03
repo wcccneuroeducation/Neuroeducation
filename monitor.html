@@ -111,16 +111,78 @@
   top: -1px;
   border-top: 2px dashed #333;
 }
-
-.combined-values {
-  display: flex;
-  align-items: baseline;
-  gap: 24px;
-  white-space: nowrap;
+.wave-trace {
+  flex: 1;
+  height: 64px;
+  position: relative;
+  overflow: hidden;
 }
 
-.compact-value {
-  font-size: 2.4rem;
+.wave-trace svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.wave-trace path,
+.wave-trace polyline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ecg-trace {
+  color: #00ff66;
+}
+
+.art-trace {
+  color: #ff3333;
+}
+
+.icp-trace {
+  color: #ffd400;
+}
+
+.spo2-trace {
+  color: #00ccff;
+}
+
+.etco2-trace {
+  color: #ffd400;
+}
+.combined-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  column-gap: 18px;
+  white-space: nowrap;
+  width: 100%;
+}
+.value-pair {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.value-pair:nth-child(2) {
+  justify-content: flex-start;
+}
+
+.value-pair-label {
+  font-size: 1rem;
+  color: #aaa;
+  font-weight: bold;
+}
+
+.map-value {
+  color: #ff3333;
+}
+
+
+.value.compact-value {
+  font-size: 2.8rem;
 }
 
 .compact-tile {
@@ -143,28 +205,7 @@
       color: #aaa;
       margin-left: 6px;
     }
-.bp-map-row {
-  display: flex;
-  align-items: baseline;
-  gap: 28px;
-}
 
-.map-inline {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  color: #ff3333;
-  font-weight: bold;
-}
-
-.map-label {
-  font-size: 1.2rem;
-}
-
-.map-inline #map {
-  font-size: 2.6rem;
-  line-height: 1;
-}
     .green {
       color: #00ff66;
     }
@@ -200,10 +241,11 @@
     }
 
     @media (max-width: 900px) {
-      .vitals {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
+      
+.value.compact-value {
+  font-size: 2.8rem;
+  line-height: 1;
+}
       .value {
         font-size: 3.2rem;
       }
@@ -230,6 +272,10 @@
       .value {
         font-size: 2.8rem;
       }
+      .value.compact-value {
+  font-size: 2.8rem;
+  line-height: 1;
+}
     }
     .test-controls {
   grid-column: 1 / 4;
@@ -324,6 +370,24 @@
   animation: flashAlarm 1.5s infinite;
 }
 
+.enable-sound-button {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 9999;
+  background: #222;
+  color: white;
+  border: 1px solid #666;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.enable-sound-button.hidden {
+  display: none;
+}
+
 @keyframes flashAlarm {
   0% {
     opacity: 1;
@@ -341,6 +405,9 @@
 <body>
   <audio id="yellowAlarmSound" src="yalarm.mp3"></audio>
 <audio id="redAlarmSound" src="ralarm.mp3"></audio>
+<button id="enableSoundButton" class="enable-sound-button" onclick="enableAlarmSound()">
+  Tap to enable alarm sound
+</button>
   <div class="monitor">
 
     
@@ -357,7 +424,24 @@
 
       <div class="wave-row">
   <div class="wave-label">ECG</div>
-  <div class="wave-line"></div>
+<div class="wave-trace ecg-trace">
+  <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+    <polyline points="
+      0,55 60,55 70,45 80,55 120,55
+      130,25 140,80 150,55
+      210,55 225,48 240,55 300,55
+      310,45 320,55 360,55
+      370,25 380,80 390,55
+      450,55 465,48 480,55 540,55
+      550,45 560,55 600,55
+      610,25 620,80 630,55
+      690,55 705,48 720,55 780,55
+      790,45 800,55 840,55
+      850,25 860,80 870,55
+      930,55 945,48 960,55 1000,55
+    "/>
+  </svg>
+</div>
 </div>
 
 <div class="tile">
@@ -370,47 +454,103 @@
 
 <div class="wave-row">
   <div class="wave-label">ART</div>
-  <div class="wave-line"></div>
+<div class="wave-trace art-trace">
+  <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+    <path d="
+      M 0 70
+      C 30 70, 45 25, 70 22
+      C 95 25, 110 50, 130 58
+      C 145 62, 155 48, 165 55
+      C 200 75, 250 72, 290 70
+      C 330 70, 345 25, 370 22
+      C 395 25, 410 50, 430 58
+      C 445 62, 455 48, 465 55
+      C 500 75, 550 72, 590 70
+      C 630 70, 645 25, 670 22
+      C 695 25, 710 50, 730 58
+      C 745 62, 755 48, 765 55
+      C 800 75, 850 72, 890 70
+      C 930 70, 945 25, 970 22
+      C 990 25, 1000 45, 1000 58
+    "/>
+  </svg>
+</div>
 </div>
 
-<div class="tile">
+<div class="tile compact-tile">
   <div class="label">BP / MAP</div>
-  <div class="bp-map-row">
-    <div>
-      <span id="bp" class="value red small-value">126/74</span>
-      <span class="unit">mmHg</span>
+
+  <div class="combined-values">
+    <div class="value-pair">
+      <span id="bp" class="value red compact-value">126/74</span>
+      <span class="value-pair-label">mmHg</span>
     </div>
 
-    <div class="map-inline">
-      <span class="map-label">MAP</span>
-      <span id="map">91</span>
+    <div class="value-pair">
+      <span class="value-pair-label">MAP</span>
+      <span id="map" class="value compact-value map-value">91</span>
     </div>
   </div>
 </div>
 
 <div class="wave-row">
   <div class="wave-label">ICP</div>
-  <div class="wave-line"></div>
+<div class="wave-trace icp-trace">
+  <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+    <path d="
+      M 0 65
+      C 40 65, 55 42, 80 38
+      C 105 40, 120 52, 145 60
+      C 185 72, 235 68, 290 65
+      C 330 65, 345 42, 380 38
+      C 405 40, 420 52, 445 60
+      C 485 72, 535 68, 590 65
+      C 630 65, 645 42, 680 38
+      C 705 40, 720 52, 745 60
+      C 785 72, 835 68, 890 65
+      C 930 65, 945 42, 980 38
+      C 990 40, 1000 50, 1000 60
+    "/>
+  </svg>
+</div>
 </div>
 
 <div class="tile compact-tile">
   <div class="label">ICP / CPP</div>
+
   <div class="combined-values">
-    <div>
+    <div class="value-pair">
       <span id="icp" class="value yellow compact-value">14</span>
-      <span class="unit">ICP</span>
+      <span class="value-pair-label">ICP</span>
     </div>
 
-    <div>
+    <div class="value-pair">
       <span id="cpp" class="value yellow compact-value">--</span>
-      <span class="unit">CPP</span>
+      <span class="value-pair-label">CPP</span>
     </div>
   </div>
 </div>
 
 <div class="wave-row">
   <div class="wave-label">SpO₂</div>
-  <div class="wave-line"></div>
+<div class="wave-trace spo2-trace">
+  <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+    <path d="
+      M 0 70
+      C 40 70, 55 35, 95 35
+      C 135 35, 150 70, 190 70
+      C 230 70, 245 35, 285 35
+      C 325 35, 340 70, 380 70
+      C 420 70, 435 35, 475 35
+      C 515 35, 530 70, 570 70
+      C 610 70, 625 35, 665 35
+      C 705 35, 720 70, 760 70
+      C 800 70, 815 35, 855 35
+      C 895 35, 910 70, 950 70
+      C 975 70, 990 60, 1000 50
+    "/>
+  </svg>
+</div>
 </div>
 
 <div class="tile">
@@ -423,20 +563,32 @@
 
 <div class="wave-row">
   <div class="wave-label">EtCO₂</div>
-  <div class="wave-line"></div>
+<div class="wave-trace etco2-trace">
+  <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+    <polyline points="
+      0,78 60,78 80,30 160,30 180,78
+      240,78 260,30 340,30 360,78
+      420,78 440,30 520,30 540,78
+      600,78 620,30 700,30 720,78
+      780,78 800,30 880,30 900,78
+      960,78 980,30 1000,30
+    "/>
+  </svg>
+</div>
 </div>
 
 <div class="tile compact-tile">
   <div class="label">RR / EtCO₂</div>
+
   <div class="combined-values">
-    <div>
+    <div class="value-pair">
       <span id="rr" class="value green compact-value">16</span>
-      <span class="unit">RR</span>
+      <span class="value-pair-label">RR</span>
     </div>
 
-    <div>
+    <div class="value-pair">
       <span id="etco2" class="value yellow compact-value">4.8</span>
-      <span class="unit">kPa</span>
+      <span class="value-pair-label">kPa</span>
     </div>
   </div>
 </div>
@@ -707,6 +859,23 @@ function playCurrentAlarmWithGap(token) {
   };
 }
 
+function enableAlarmSound() {
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+  const enableButton = document.getElementById("enableSoundButton");
+
+  yellowAlarmSound.play().then(() => {
+    yellowAlarmSound.pause();
+    yellowAlarmSound.currentTime = 0;
+  }).catch(() => {});
+
+  redAlarmSound.play().then(() => {
+    redAlarmSound.pause();
+    redAlarmSound.currentTime = 0;
+  }).catch(() => {});
+
+  enableButton.classList.add("hidden");
+}
 // ------------------------------
 // Alarm visual logic
 // ------------------------------
@@ -720,9 +889,9 @@ function applyWarningColours(map, cpp) {
   // Reset normal colours and remove alarm flashing
   hrElement.className = "value green";
   spo2Element.className = "value blue";
-  icpElement.className = "value yellow";
-  cppElement.className = "value yellow";
-  mapElement.className = "";
+  icpElement.className = "value yellow compact-value";
+  cppElement.className = "value yellow compact-value";
+  mapElement.className = "value compact-value map-value";
 
   let alarmLevel = "none";
   let alarmMessages = [];
