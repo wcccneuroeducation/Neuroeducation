@@ -77,7 +77,28 @@
       color: #aaa;
       margin-left: 6px;
     }
+.bp-map-row {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+}
 
+.map-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #ff3333;
+  font-weight: bold;
+}
+
+.map-label {
+  font-size: 1.2rem;
+}
+
+.map-inline #map {
+  font-size: 2.6rem;
+  line-height: 1;
+}
     .green {
       color: #00ff66;
     }
@@ -144,10 +165,76 @@
         font-size: 2.8rem;
       }
     }
+    .test-controls {
+  grid-column: 1 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 2px solid #333;
+  padding-top: 12px;
+}
+
+.test-controls button {
+  background: #111;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.test-controls button:hover {
+  background: #222;
+}
+
+.reset-button {
+  border-color: #ff5555 !important;
+  color: #ff7777 !important;
+}
+.sim-controls {
+  grid-column: 1 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 2px solid #333;
+  padding-top: 12px;
+}
+
+.sim-controls button {
+  background: #111;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.sim-controls button:hover {
+  background: #222;
+}
+
+.flash-alarm {
+  animation: flashAlarm 1.5s infinite;
+}
+
+@keyframes flashAlarm {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 1;
+  }
+}
   </style>
 </head>
 
 <body>
+  <audio id="alarmSound" src="yalarm.mp3"></audio>
   <div class="monitor">
 
     <div class="header">
@@ -174,25 +261,33 @@
       </div>
 
       <div class="tile">
-        <div class="label">BP</div>
-        <div>
-          <span id="bp" class="value red small-value">126/74</span>
-          <span class="unit">mmHg</span>
-        </div>
-      </div>
+  <div class="label">BP / MAP</div>
 
-      <div class="tile">
+  <div class="bp-map-row">
+    <div>
+      <span id="bp" class="value red small-value">126/74</span>
+      <span class="unit">mmHg</span>
+    </div>
+
+    <div class="map-inline">
+      <span class="map-label">MAP</span>
+      <span id="map">91</span>
+    </div>
+  </div>
+</div>
+
+       <!-- <div class="tile">
         <div class="label">MAP</div>
         <div>
           <span id="map" class="value red">--</span>
           <span class="unit">mmHg</span>
         </div>
-      </div>
+      </div> -->
 
       <div class="tile">
         <div class="label">ICP</div>
         <div>
-          <span id="icp" class="value purple">14</span>
+          <span id="icp" class="value yellow">14</span>
           <span class="unit">mmHg</span>
         </div>
       </div>
@@ -222,11 +317,47 @@
       </div>
 
     </div>
+<div class="test-controls">
+  <button onclick="changeValue('hr', 5)">HR +5</button>
+  <button onclick="changeValue('hr', -5)">HR -5</button>
 
+  <button onclick="changeValue('spo2', 1)">SpO₂ +1</button>
+  <button onclick="changeValue('spo2', -1)">SpO₂ -1</button>
+
+  <button onclick="changeValue('systolic', 5)">Sys +5</button>
+  <button onclick="changeValue('systolic', -5)">Sys -5</button>
+
+  <button onclick="changeValue('diastolic', 5)">Dia +5</button>
+  <button onclick="changeValue('diastolic', -5)">Dia -5</button>
+
+  <button onclick="changeValue('icp', 1)">ICP +1</button>
+  <button onclick="changeValue('icp', -1)">ICP -1</button>
+
+  <button onclick="changeValue('rr', 1)">RR +1</button>
+  <button onclick="changeValue('rr', -1)">RR -1</button>
+
+  <button onclick="changeValue('etco2', 0.2)">EtCO₂ +0.2</button>
+  <button onclick="changeValue('etco2', -0.2)">EtCO₂ -0.2</button>
+  </div>
+
+<div class="sim-controls">
+  <button onclick="simStartKinked()">Start: SIM</button>
+<button onclick="simBasicCare()">Basic nursing care</button>
+<button onclick="simAgitatedRise()">Awake/agitated rise</button>
+<button onclick="simNoradEarly()">Norad too early</button>
+<button onclick="simSedationFirst()">Sedation increased</button>
+<button onclick="simNoradAfterSedation()">Norad after sedation</button>
+<!--<button onclick="scenarioRaisedICP()">Raised ICP</button>
+<button onclick="scenarioHeadUp()">Head up 30°</button>
+<button onclick="scenarioSedation()">Sedation increased</button>
+<button onclick="scenarioNorad()">Norad increased</button> -->
+  <button class="reset-button" onclick="resetPatient()">Reset</button>
+</div>
     <div class="footer">
-      <div>Simulation display only</div>
-      <div id="scenario">Scenario: Baseline</div>
-    </div>
+  <div>Simulation display only</div>
+  <div id="simTimer">Sim timer: 00:00</div>
+  <div id="scenario">Scenario: Baseline</div>
+</div>
 
   </div>
 
@@ -245,7 +376,11 @@
       etco2: 4.8,
       scenario: "Baseline"
     };
-
+const simState = {
+  sedationGiven: false,
+  timerInterval: null,
+  timerSeconds: 0
+};
     // ------------------------------
     // Calculation functions
     // ------------------------------
@@ -284,37 +419,97 @@
     // ------------------------------
 
     function applyWarningColours(map, cpp) {
-      const spo2Element = document.getElementById("spo2");
-      const icpElement = document.getElementById("icp");
-      const cppElement = document.getElementById("cpp");
-      const mapElement = document.getElementById("map");
+  const hrElement = document.getElementById("hr");
+  const spo2Element = document.getElementById("spo2");
+  const icpElement = document.getElementById("icp");
+  const cppElement = document.getElementById("cpp");
+  const mapElement = document.getElementById("map");
 
-      // Reset colours
-      spo2Element.className = "value blue";
-      icpElement.className = "value purple";
-      cppElement.className = "value yellow";
-      mapElement.className = "value red";
+  // Reset normal colours and remove alarm flashing
+  hrElement.className = "value green";
+  spo2Element.className = "value blue";
+  icpElement.className = "value yellow";
+  cppElement.className = "value yellow";
+  mapElement.className = "map-number";
 
-      // SpO2 warning
-      if (patient.spo2 < 92) {
-        spo2Element.className = "value red";
-      }
+  let alarmActive = false;
 
-      // ICP warning
-      if (patient.icp > 20) {
-        icpElement.className = "value red";
-      }
+  // HR alarm
+  if (patient.hr < 50 || patient.hr > 120) {
+    hrElement.classList.add("flash-alarm");
+    alarmActive = true;
+  }
 
-      // CPP warning
-      if (cpp < 60) {
-        cppElement.className = "value red";
-      }
+  // SpO2 alarm
+  if (patient.spo2 < 92) {
+    spo2Element.classList.add("flash-alarm");
+    alarmActive = true;
+  }
 
-      // MAP warning
-      if (map < 65) {
-        mapElement.className = "value red";
-      }
+  // ICP alarm
+  if (patient.icp > 20) {
+    icpElement.classList.add("flash-alarm");
+    alarmActive = true;
+  }
+
+  // CPP alarm
+  if (cpp <= 65) {
+    cppElement.classList.add("flash-alarm");
+    alarmActive = true;
+  }
+
+  // MAP alarm
+  if (map < 65) {
+    mapElement.classList.add("flash-alarm");
+    alarmActive = true;
+  }
+
+  setAlarmSound(alarmActive);
+}
+
+let alarmLoopTimeout = null;
+let alarmIsPlaying = false;
+
+function setAlarmSound(alarmActive) {
+  const alarmSound = document.getElementById("alarmSound");
+
+  if (alarmActive) {
+    if (!alarmIsPlaying) {
+      alarmIsPlaying = true;
+      playAlarmWithGap();
     }
+  } else {
+    alarmIsPlaying = false;
+
+    if (alarmLoopTimeout !== null) {
+      clearTimeout(alarmLoopTimeout);
+      alarmLoopTimeout = null;
+    }
+
+    alarmSound.pause();
+    alarmSound.currentTime = 0;
+  }
+}
+
+function playAlarmWithGap() {
+  if (!alarmIsPlaying) return;
+
+  const alarmSound = document.getElementById("alarmSound");
+
+  alarmSound.currentTime = 0;
+  alarmSound.play().catch(() => {
+    // Browser may block sound until user has interacted with the page
+  });
+
+  alarmSound.onended = () => {
+    if (!alarmIsPlaying) return;
+
+    // Gap after the alarm sound finishes
+    alarmLoopTimeout = setTimeout(() => {
+      playAlarmWithGap();
+    }, 1500); // change this number for bigger/smaller gap
+  };
+}
 
     // ------------------------------
     // Clock
@@ -334,9 +529,328 @@
     // ------------------------------
     // Start app
     // ------------------------------
+// ------------------------------
+// Basic test controls
+// ------------------------------
+
+const baselinePatient = {
+  hr: 86,
+  spo2: 98,
+  systolic: 126,
+  diastolic: 74,
+  icp: 14,
+  rr: 16,
+  etco2: 4.8,
+  scenario: "Baseline"
+};
+
+function changeValue(parameter, amount) {
+  patient[parameter] += amount;
+
+  // Basic safety limits to keep values realistic
+  patient.hr = clamp(patient.hr, 30, 220);
+  patient.spo2 = clamp(patient.spo2, 50, 100);
+  patient.systolic = clamp(patient.systolic, 50, 240);
+  patient.diastolic = clamp(patient.diastolic, 20, 140);
+  patient.icp = clamp(patient.icp, 0, 80);
+  patient.rr = clamp(patient.rr, 0, 50);
+  patient.etco2 = clamp(patient.etco2, 1.0, 12.0);
+
+  // Keep systolic above diastolic
+  if (patient.systolic <= patient.diastolic) {
+    patient.systolic = patient.diastolic + 5;
+  }
+
+  patient.scenario = "Manual test";
+  updateMonitor();
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function resetPatient() {
+  clearGradualChanges();resetSimTimer();
+  simState.sedationGiven = false;
+  patient.hr = baselinePatient.hr;
+  patient.spo2 = baselinePatient.spo2;
+  patient.systolic = baselinePatient.systolic;
+  patient.diastolic = baselinePatient.diastolic;
+  patient.icp = baselinePatient.icp;
+  patient.rr = baselinePatient.rr;
+  patient.etco2 = baselinePatient.etco2;
+  patient.scenario = baselinePatient.scenario;
+
+  updateMonitor();
+}
+function startSimTimer() {
+  stopSimTimer();
+
+  simState.timerSeconds = 0;
+  updateSimTimerDisplay();
+
+  simState.timerInterval = setInterval(() => {
+    simState.timerSeconds++;
+    updateSimTimerDisplay();
+  }, 1000);
+}
+
+function stopSimTimer() {
+  if (simState.timerInterval !== null) {
+    clearInterval(simState.timerInterval);
+    simState.timerInterval = null;
+  }
+}
+
+function resetSimTimer() {
+  stopSimTimer();
+  simState.timerSeconds = 0;
+  updateSimTimerDisplay();
+}
+
+function updateSimTimerDisplay() {
+  const minutes = Math.floor(simState.timerSeconds / 60);
+  const seconds = simState.timerSeconds % 60;
+
+  const timeText =
+    String(minutes).padStart(2, "0") +
+    ":" +
+    String(seconds).padStart(2, "0");
+
+  document.getElementById("simTimer").textContent = `Sim timer: ${timeText}`;
+}
+// ------------------------------
+// Scenario buttons
+// ------------------------------
+let activeIntervals = [];
+function clearGradualChanges() {
+  activeIntervals.forEach(interval => clearInterval(interval));
+  activeIntervals = [];
+}
+function gradualChange(parameter, targetValue, stepAmount, delayMs) {
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    if (patient[parameter] < targetValue) {
+      patient[parameter] = Math.min(patient[parameter] + stepAmount, targetValue);
+    } else {
+      patient[parameter] = Math.max(patient[parameter] - stepAmount, targetValue);
+    }
 
     updateMonitor();
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+function gradualIntChangeOverTime(parameter, targetValue, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.abs(difference);
+
+  if (steps === 0) return;
+
+  const stepDirection = difference > 0 ? 1 : -1;
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    patient[parameter] += stepDirection;
+    updateMonitor();
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+
+function gradualDecimalChangeOverTime(parameter, targetValue, stepAmount, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.ceil(Math.abs(difference) / stepAmount);
+
+  if (steps === 0) return;
+
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    if (Math.abs(patient[parameter] - targetValue) < stepAmount) {
+      patient[parameter] = targetValue;
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      updateMonitor();
+      return;
+    }
+
+    if (patient[parameter] < targetValue) {
+      patient[parameter] += stepAmount;
+    } else {
+      patient[parameter] -= stepAmount;
+    }
+
+    patient[parameter] = Math.round(patient[parameter] * 10) / 10;
+    updateMonitor();
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+function scenarioRaisedICP() {
+  patient.icp = 30;
+  patient.hr = 58;
+  patient.systolic = 158;
+  patient.diastolic = 86;
+  patient.rr = 12;
+  patient.etco2 = 5.8;
+  patient.scenario = "Raised ICP";
+
+  updateMonitor();
+}
+
+function scenarioHeadUp() {
+  patient.scenario = "Head up 30° / neutral neck";
+  updateMonitor();
+
+  const targetICP = clamp(patient.icp - 8, 0, 80);
+
+  gradualChange("icp", targetICP, 1, 3000);
+}
+
+function scenarioSedation() {
+  patient.hr = clamp(patient.hr - 18, 30, 220);
+  patient.systolic = clamp(patient.systolic - 22, 50, 240);
+  patient.diastolic = clamp(patient.diastolic - 10, 20, 140);
+  patient.icp = clamp(patient.icp - 8, 0, 80);
+  patient.rr = clamp(patient.rr - 0, 0, 50);
+  patient.etco2 = clamp(patient.etco2 + 0.4, 1.0, 12.0);
+  patient.scenario = "Sedation increased";
+
+  updateMonitor();
+}
+
+function scenarioNorad() {
+  patient.systolic = clamp(patient.systolic + 22, 50, 240);
+  patient.diastolic = clamp(patient.diastolic + 12, 20, 140);
+  patient.hr = clamp(patient.hr - 5, 30, 220);
+  patient.scenario = "Norad increased";
+
+  updateMonitor();
+}
+// ------------------------------
+// Autoregulation Sim Logic
+// ------------------------------
+
+function simStartKinked() {
+  clearGradualChanges();
+  simState.sedationGiven = false;
+  startSimTimer();
+
+  // Start from baseline while learners are entering / setting up
+  patient.hr = 86;
+  patient.spo2 = 98;
+  patient.systolic = 126;
+  patient.diastolic = 74;
+  patient.icp = 14;
+  patient.rr = 16;
+  patient.etco2 = 4.8;
+  patient.scenario = "Start: deterioration over 2 minutes";
+
+  updateMonitor();
+
+  const twoMinutes = 120000;
+
+  // Gradually move into the slumped / neck kinked state
+  gradualIntChangeOverTime("hr", 88, twoMinutes);
+  gradualIntChangeOverTime("spo2", 97, twoMinutes);
+  gradualIntChangeOverTime("systolic", 135, twoMinutes);
+  gradualIntChangeOverTime("diastolic", 65, twoMinutes);
+  gradualIntChangeOverTime("icp", 26, twoMinutes);
+  gradualIntChangeOverTime("rr", 16, twoMinutes);
+  gradualDecimalChangeOverTime("etco2", 4.6, 0.1, twoMinutes);
+}
+
+function simBasicCare() {
+  clearGradualChanges();
+  patient.scenario = "Basic nursing care: head up / neutral neck";
+  updateMonitor();
+
+  // ICP improves gradually after positioning and reducing venous obstruction
+  gradualChange("icp", clamp(patient.icp - 10, 0, 80), 1, 2000);
+
+  // BP settles slightly as stimulation reduces
+  gradualChange("systolic", clamp(patient.systolic - 8, 50, 240), 2, 3000);
+  gradualChange("diastolic", clamp(patient.diastolic - 4, 20, 140), 1, 3000);
+}
+
+function simAgitatedRise() {
+  clearGradualChanges();
+  simState.sedationGiven = false;
+
+  patient.scenario = "Awake / agitated: ICP rising";
+  updateMonitor();
+
+  // Patient becomes more stimulated: BP rises, HR rises, ICP rises more prominently
+  gradualChange("hr", clamp(patient.hr + 12, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic + 22, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 10, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 16, 0, 80), 2, 2000);
+  gradualChange("etco2", clamp(patient.etco2 + 0.3, 1.0, 12.0), 0.1, 3000);
+}
+
+function simNoradEarly() {
+  clearGradualChanges();
+  patient.scenario = "Norad before sedation: ICP worsens";
+  updateMonitor();
+
+  // In this sim, BP augmentation before ICP/sedation control worsens ICP
+  gradualChange("systolic", clamp(patient.systolic + 25, 50, 240), 5, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 5, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 11, 0, 80), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+}
+
+function simSedationFirst() {
+  clearGradualChanges();
+  simState.sedationGiven = true;
+
+  patient.scenario = "Sedation increased: ICP improving";
+  updateMonitor();
+
+  // Sedation reduces agitation-driven ICP but may also drop BP
+  gradualChange("hr", clamp(patient.hr - 15, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic - 18, 50, 240), 3, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic - 8, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp - 14, 0, 80), 2, 2000);
+  gradualChange("rr", clamp(patient.rr - 0, 0, 50), 1, 3000);
+  gradualChange("etco2", clamp(patient.etco2 + 0.2, 1.0, 12.0), 0.1, 3000);
+}
+
+function simNoradAfterSedation() {
+  clearGradualChanges();
+  if (!simState.sedationGiven) {
+    simNoradEarly();
+    return;
+  }
+
+  patient.scenario = "Norad after sedation: CPP improving";
+  updateMonitor();
+
+  // After sedation/ICP control, BP augmentation improves CPP without worsening ICP
+  gradualChange("systolic", clamp(patient.systolic + 24, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 12, 20, 140), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+
+  // ICP remains stable or slightly improves
+  gradualChange("icp", clamp(patient.icp - 2, 0, 80), 1, 4000);
+}
+    updateMonitor();
     updateClock();
+    updateSimTimerDisplay();
 
     setInterval(updateClock, 1000);
   </script>
