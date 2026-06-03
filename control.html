@@ -136,7 +136,26 @@
     Scenario: <span id="scenarioValue">--</span>
   </div>
 
-  <button class="reset" onclick="resetPatient()">Reset Baseline</button>
+  <div class="control-card">
+  <div class="label">Autoregulation Sim</div>
+
+  <div class="button-row">
+    <button onclick="simStartKinked()">Start SIM</button>
+    <button onclick="simBasicCare()">Basic nursing care</button>
+  </div>
+
+  <div class="button-row">
+    <button onclick="simAgitatedRise()">Awake/agitated rise</button>
+    <button onclick="simNoradEarly()">Norad too early</button>
+  </div>
+
+  <div class="button-row">
+    <button onclick="simSedationFirst()">Sedation increased</button>
+    <button onclick="simNoradAfterSedation()">Norad after sedation</button>
+  </div>
+</div>
+
+<button class="reset" onclick="resetPatient()">Reset Baseline</button>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -245,12 +264,247 @@
     }
 
     function resetPatient() {
-      roomRef.set(baselinePatient);
-    }
+  clearGradualChanges();
+  stopSimTimer();
+  roomRef.set(baselinePatient);
+}
 
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
     }
+
+    // ------------------------------
+// Gradual Firebase updates maybe
+// ------------------------------
+
+let activeIntervals = [];
+let simTimerInterval = null;
+
+function clearGradualChanges() {
+  activeIntervals.forEach(interval => clearInterval(interval));
+  activeIntervals = [];
+}
+
+function writePatient(updatedPatient) {
+  patient = { ...patient, ...updatedPatient };
+  roomRef.update(patient);
+}
+
+function gradualChange(parameter, targetValue, stepAmount, delayMs) {
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    const updatedPatient = { ...patient };
+
+    if (updatedPatient[parameter] < targetValue) {
+      updatedPatient[parameter] = Math.min(updatedPatient[parameter] + stepAmount, targetValue);
+    } else {
+      updatedPatient[parameter] = Math.max(updatedPatient[parameter] - stepAmount, targetValue);
+    }
+
+    writePatient(updatedPatient);
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+
+function gradualIntChangeOverTime(parameter, targetValue, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.abs(difference);
+
+  if (steps === 0) return;
+
+  const stepDirection = difference > 0 ? 1 : -1;
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    const updatedPatient = { ...patient };
+    updatedPatient[parameter] += stepDirection;
+
+    writePatient(updatedPatient);
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+
+function gradualDecimalChangeOverTime(parameter, targetValue, stepAmount, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.ceil(Math.abs(difference) / stepAmount);
+
+  if (steps === 0) return;
+
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    const updatedPatient = { ...patient };
+
+    if (Math.abs(updatedPatient[parameter] - targetValue) < stepAmount) {
+      updatedPatient[parameter] = targetValue;
+      writePatient(updatedPatient);
+
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    if (updatedPatient[parameter] < targetValue) {
+      updatedPatient[parameter] += stepAmount;
+    } else {
+      updatedPatient[parameter] -= stepAmount;
+    }
+
+    updatedPatient[parameter] = Math.round(updatedPatient[parameter] * 10) / 10;
+
+    writePatient(updatedPatient);
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+
+// ------------------------------
+// Sim timer
+// ------------------------------
+
+function startSimTimer() {
+  stopSimTimer();
+
+  let seconds = 0;
+
+  roomRef.update({
+    timerSeconds: seconds
+  });
+
+  simTimerInterval = setInterval(() => {
+    seconds++;
+
+    roomRef.update({
+      timerSeconds: seconds
+    });
+  }, 1000);
+}
+
+function stopSimTimer() {
+  if (simTimerInterval !== null) {
+    clearInterval(simTimerInterval);
+    simTimerInterval = null;
+  }
+}
+
+// ------------------------------
+// Autoregulation Sim Logic
+// ------------------------------
+
+function simStartKinked() {
+  clearGradualChanges();
+  startSimTimer();
+
+  writePatient({
+    hr: 86,
+    spo2: 98,
+    systolic: 126,
+    diastolic: 74,
+    icp: 14,
+    rr: 16,
+    etco2: 4.8,
+    scenario: "Start: deterioration over 2 minutes",
+    sedationGiven: false,
+    timerSeconds: 0
+  });
+
+  const twoMinutes = 120000;
+
+  gradualIntChangeOverTime("hr", 88, twoMinutes);
+  gradualIntChangeOverTime("spo2", 97, twoMinutes);
+  gradualIntChangeOverTime("systolic", 135, twoMinutes);
+  gradualIntChangeOverTime("diastolic", 65, twoMinutes);
+  gradualIntChangeOverTime("icp", 26, twoMinutes);
+  gradualDecimalChangeOverTime("etco2", 4.6, 0.1, twoMinutes);
+}
+
+function simBasicCare() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Basic nursing care: head up / neutral neck"
+  });
+
+  gradualChange("icp", clamp(patient.icp - 10, 0, 80), 1, 2000);
+  gradualChange("systolic", clamp(patient.systolic - 8, 50, 240), 2, 3000);
+  gradualChange("diastolic", clamp(patient.diastolic - 4, 20, 140), 1, 3000);
+}
+
+function simAgitatedRise() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Awake / agitated: ICP rising",
+    sedationGiven: false
+  });
+
+  gradualChange("hr", clamp(patient.hr + 12, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic + 22, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 10, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 16, 0, 80), 2, 2000);
+  gradualChange("etco2", clamp(patient.etco2 + 0.3, 1.0, 12.0), 0.1, 3000);
+}
+
+function simNoradEarly() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Norad before sedation: ICP worsens"
+  });
+
+  gradualChange("systolic", clamp(patient.systolic + 25, 50, 240), 5, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 5, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 11, 0, 80), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+}
+
+function simSedationFirst() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Sedation increased: ICP improving",
+    sedationGiven: true
+  });
+
+  gradualChange("hr", clamp(patient.hr - 15, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic - 18, 50, 240), 3, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic - 8, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp - 14, 0, 80), 2, 2000);
+  gradualChange("etco2", clamp(patient.etco2 + 0.2, 1.0, 12.0), 0.1, 3000);
+}
+
+function simNoradAfterSedation() {
+  clearGradualChanges();
+
+  if (!patient.sedationGiven) {
+    simNoradEarly();
+    return;
+  }
+
+  writePatient({
+    scenario: "Norad after sedation: CPP improving"
+  });
+
+  gradualChange("systolic", clamp(patient.systolic + 24, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 12, 20, 140), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+  gradualChange("icp", clamp(patient.icp - 2, 0, 80), 1, 4000);
+}
   </script>
 </body>
 </html>
