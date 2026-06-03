@@ -234,7 +234,8 @@
 </head>
 
 <body>
-  <audio id="alarmSound" src="yalarm.mp3"></audio>
+  <audio id="yellowAlarmSound" src="yalarm.mp3"></audio>
+<audio id="redAlarmSound" src="ralarm.mp3"></audio>
   <div class="monitor">
 
     <div class="header">
@@ -458,7 +459,75 @@ roomRef.on("value", (snapshot) => {
     // Simple colour warnings
     // ------------------------------
 
-    function applyWarningColours(map, cpp) {
+   // ------------------------------
+// Alarm sound handling
+// ------------------------------
+
+let alarmLoopTimeout = null;
+let activeAlarmLevel = "none";
+
+function setAlarmSound(alarmLevel) {
+  // alarmLevel should be: "none", "yellow", or "red"
+
+  if (alarmLevel === activeAlarmLevel) {
+    return;
+  }
+
+  stopAllAlarmSounds();
+  activeAlarmLevel = alarmLevel;
+
+  if (alarmLevel !== "none") {
+    playCurrentAlarmWithGap();
+  }
+}
+
+function stopAllAlarmSounds() {
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+
+  if (alarmLoopTimeout !== null) {
+    clearTimeout(alarmLoopTimeout);
+    alarmLoopTimeout = null;
+  }
+
+  yellowAlarmSound.pause();
+  yellowAlarmSound.currentTime = 0;
+
+  redAlarmSound.pause();
+  redAlarmSound.currentTime = 0;
+}
+
+function playCurrentAlarmWithGap() {
+  if (activeAlarmLevel === "none") return;
+
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+
+  const soundToPlay =
+    activeAlarmLevel === "red" ? redAlarmSound : yellowAlarmSound;
+
+  soundToPlay.currentTime = 0;
+
+  soundToPlay.play().catch(() => {
+    // Browser may block sound until user has interacted with the page
+  });
+
+  soundToPlay.onended = () => {
+    if (activeAlarmLevel === "none") return;
+
+   const gap = activeAlarmLevel === "red" ? 50 : 1500;
+
+alarmLoopTimeout = setTimeout(() => {
+  playCurrentAlarmWithGap();
+}, gap);
+  };
+}
+
+// ------------------------------
+// Alarm visual logic
+// ------------------------------
+
+function applyWarningColours(map, cpp) {
   const hrElement = document.getElementById("hr");
   const spo2Element = document.getElementById("spo2");
   const icpElement = document.getElementById("icp");
@@ -470,85 +539,62 @@ roomRef.on("value", (snapshot) => {
   spo2Element.className = "value blue";
   icpElement.className = "value yellow";
   cppElement.className = "value yellow";
-  mapElement.className = "map-number";
+  mapElement.className = "";
 
-  let alarmActive = false;
+  let yellowAlarmActive = false;
+  let redAlarmActive = false;
 
-  // HR alarm
-  if (patient.hr < 50 || patient.hr > 120) {
+  // ------------------------------
+  // Red alarm thresholds
+  // ------------------------------
+
+  if (patient.hr < 50 || patient.hr > 130) {
     hrElement.classList.add("flash-alarm");
-    alarmActive = true;
+    redAlarmActive = true;
   }
 
-  // SpO2 alarm
-  if (patient.spo2 < 92) {
+  if (patient.spo2 < 88) {
     spo2Element.classList.add("flash-alarm");
-    alarmActive = true;
+    redAlarmActive = true;
   }
 
-  // ICP alarm
-  if (patient.icp > 20) {
-    icpElement.classList.add("flash-alarm");
-    alarmActive = true;
-  }
-
-  // CPP alarm
-  if (cpp <= 65) {
-    cppElement.classList.add("flash-alarm");
-    alarmActive = true;
-  }
-
-  // MAP alarm
   if (map < 65) {
     mapElement.classList.add("flash-alarm");
-    alarmActive = true;
+    redAlarmActive = true;
   }
 
-  setAlarmSound(alarmActive);
-}
+  if (patient.icp > 35) {
+    icpElement.classList.add("flash-alarm");
+    redAlarmActive = true;
+  }
 
-let alarmLoopTimeout = null;
-let alarmIsPlaying = false;
+  if (cpp < 50) {
+    cppElement.classList.add("flash-alarm");
+    redAlarmActive = true;
+  }
 
-function setAlarmSound(alarmActive) {
-  const alarmSound = document.getElementById("alarmSound");
+  // ------------------------------
+  // Yellow alarm thresholds
+  // ------------------------------
 
-  if (alarmActive) {
-    if (!alarmIsPlaying) {
-      alarmIsPlaying = true;
-      playAlarmWithGap();
-    }
+  if (patient.icp > 20 && patient.icp <= 35) {
+    icpElement.classList.add("flash-alarm");
+    yellowAlarmActive = true;
+  }
+
+  if (cpp <= 65 && cpp >= 50) {
+    cppElement.classList.add("flash-alarm");
+    yellowAlarmActive = true;
+  }
+
+  // Red overrides yellow
+  if (redAlarmActive) {
+    setAlarmSound("red");
+  } else if (yellowAlarmActive) {
+    setAlarmSound("yellow");
   } else {
-    alarmIsPlaying = false;
-
-    if (alarmLoopTimeout !== null) {
-      clearTimeout(alarmLoopTimeout);
-      alarmLoopTimeout = null;
-    }
-
-    alarmSound.pause();
-    alarmSound.currentTime = 0;
+    setAlarmSound("none");
   }
-}
-
-function playAlarmWithGap() {
-  if (!alarmIsPlaying) return;
-
-  const alarmSound = document.getElementById("alarmSound");
-
-  alarmSound.currentTime = 0;
-  alarmSound.play().catch(() => {
-    // Browser may block sound until user has interacted with the page
-  });
-
-  alarmSound.onended = () => {
-    if (!alarmIsPlaying) return;
-
-    // Gap after the alarm sound finishes
-    alarmLoopTimeout = setTimeout(() => {
-      playAlarmWithGap();
-    }, 1500); // change this number for bigger/smaller gap
-  };
 }
 
     // ------------------------------
