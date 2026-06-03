@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ITU Monitor Sim</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+    }
+
+    .monitor {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto 1fr auto;
+      gap: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .header {
+      grid-column: 1 / 4;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+      font-size: 1.2rem;
+      color: #ccc;
+    }
+
+    .bed-label {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .vitals {
+      grid-column: 1 / 4;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      align-content: center;
+    }
+
+    .tile {
+      border: 2px solid #333;
+      border-radius: 12px;
+      padding: 20px;
+      background: #050505;
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .label {
+      font-size: 1.2rem;
+      color: #aaa;
+      letter-spacing: 1px;
+    }
+
+    .value {
+      font-size: 4rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .unit {
+      font-size: 1rem;
+      color: #aaa;
+      margin-left: 6px;
+    }
+
+    .green {
+      color: #00ff66;
+    }
+
+    .blue {
+      color: #00ccff;
+    }
+
+    .yellow {
+      color: #ffd400;
+    }
+
+    .red {
+      color: #ff3333;
+    }
+
+    .purple {
+      color: #cc66ff;
+    }
+
+    .small-value {
+      font-size: 3rem;
+    }
+
+    .footer {
+      grid-column: 1 / 4;
+      border-top: 2px solid #333;
+      padding-top: 10px;
+      font-size: 1rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 900px) {
+      .vitals {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .value {
+        font-size: 3.2rem;
+      }
+
+      .small-value {
+        font-size: 2.6rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .monitor {
+        padding: 12px;
+        gap: 12px;
+      }
+
+      .vitals {
+        grid-template-columns: 1fr;
+      }
+
+      .tile {
+        min-height: 100px;
+      }
+
+      .value {
+        font-size: 2.8rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="monitor">
+
+    <div class="header">
+      <div class="bed-label">Neuro ITU Sim Monitor</div>
+      <div id="clock">--:--:--</div>
+    </div>
+
+    <div class="vitals">
+
+      <div class="tile">
+        <div class="label">HR</div>
+        <div>
+          <span id="hr" class="value green">86</span>
+          <span class="unit">bpm</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div class="label">SpO₂</div>
+        <div>
+          <span id="spo2" class="value blue">98</span>
+          <span class="unit">%</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div class="label">BP</div>
+        <div>
+          <span id="bp" class="value red small-value">126/74</span>
+          <span class="unit">mmHg</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div class="label">MAP</div>
+        <div>
+          <span id="map" class="value red">--</span>
+          <span class="unit">mmHg</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div class="label">ICP</div>
+        <div>
+          <span id="icp" class="value purple">14</span>
+          <span class="unit">mmHg</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div class="label">CPP</div>
+        <div>
+          <span id="cpp" class="value yellow">--</span>
+          <span class="unit">mmHg</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div class="label">RR</div>
+        <div>
+          <span id="rr" class="value green">16</span>
+          <span class="unit">/min</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div class="label">EtCO₂</div>
+        <div>
+          <span id="etco2" class="value yellow">4.8</span>
+          <span class="unit">kPa</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <div>Simulation display only</div>
+      <div id="scenario">Scenario: Baseline</div>
+    </div>
+
+  </div>
+
+  <script>
+    // ------------------------------
+    // Starting patient values
+    // ------------------------------
+
+    const patient = {
+      hr: 86,
+      spo2: 98,
+      systolic: 126,
+      diastolic: 74,
+      icp: 14,
+      rr: 16,
+      etco2: 4.8,
+      scenario: "Baseline"
+    };
+
+    // ------------------------------
+    // Calculation functions
+    // ------------------------------
+
+    function calculateMAP(systolic, diastolic) {
+      return Math.round((systolic + (2 * diastolic)) / 3);
+    }
+
+    function calculateCPP(map, icp) {
+      return Math.round(map - icp);
+    }
+
+    // ------------------------------
+    // Update monitor display
+    // ------------------------------
+
+    function updateMonitor() {
+      const map = calculateMAP(patient.systolic, patient.diastolic);
+      const cpp = calculateCPP(map, patient.icp);
+
+      document.getElementById("hr").textContent = patient.hr;
+      document.getElementById("spo2").textContent = patient.spo2;
+      document.getElementById("bp").textContent = `${patient.systolic}/${patient.diastolic}`;
+      document.getElementById("map").textContent = map;
+      document.getElementById("icp").textContent = patient.icp;
+      document.getElementById("cpp").textContent = cpp;
+      document.getElementById("rr").textContent = patient.rr;
+      document.getElementById("etco2").textContent = patient.etco2.toFixed(1);
+      document.getElementById("scenario").textContent = `Scenario: ${patient.scenario}`;
+
+      applyWarningColours(map, cpp);
+    }
+
+    // ------------------------------
+    // Simple colour warnings
+    // ------------------------------
+
+    function applyWarningColours(map, cpp) {
+      const spo2Element = document.getElementById("spo2");
+      const icpElement = document.getElementById("icp");
+      const cppElement = document.getElementById("cpp");
+      const mapElement = document.getElementById("map");
+
+      // Reset colours
+      spo2Element.className = "value blue";
+      icpElement.className = "value purple";
+      cppElement.className = "value yellow";
+      mapElement.className = "value red";
+
+      // SpO2 warning
+      if (patient.spo2 < 92) {
+        spo2Element.className = "value red";
+      }
+
+      // ICP warning
+      if (patient.icp > 20) {
+        icpElement.className = "value red";
+      }
+
+      // CPP warning
+      if (cpp < 60) {
+        cppElement.className = "value red";
+      }
+
+      // MAP warning
+      if (map < 65) {
+        mapElement.className = "value red";
+      }
+    }
+
+    // ------------------------------
+    // Clock
+    // ------------------------------
+
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+
+      document.getElementById("clock").textContent = timeString;
+    }
+
+    // ------------------------------
+    // Start app
+    // ------------------------------
+
+    updateMonitor();
+    updateClock();
+
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
