@@ -424,23 +424,42 @@
 
       <div class="wave-row">
   <div class="wave-label">ECG</div>
-<div class="wave-trace ecg-trace">
-   <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
-    <polyline points="
-  0,66 26,66 36,63 44,65 52,66 63,73 68,28 73,72 84,66 96,66 108,63 118,54 128,52 138,57 148,64 160,66 180,66
 
-  195,66 221,66 231,63 239,65 247,66 258,73 263,28 268,72 279,66 291,66 303,63 313,54 323,52 333,57 343,64 355,66 375,66
+  <div class="wave-trace ecg-trace">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+      <g id="ecgAnimatedGroup">
 
-  390,66 416,66 426,63 434,65 442,66 453,73 458,28 463,72 474,66 486,66 498,63 508,54 518,52 528,57 538,64 550,66 570,66
+        <polyline class="ecg-line" points="
+          0,66 26,66 36,63 44,65 52,66 63,73 68,28 73,72 84,66 96,66 108,63 118,54 128,52 138,57 148,64 160,66 180,66
 
-  585,66 611,66 621,63 629,65 637,66 648,73 653,28 658,72 669,66 681,66 693,63 703,54 713,52 723,57 733,64 745,66 765,66
+          195,66 221,66 231,63 239,65 247,66 258,73 263,28 268,72 279,66 291,66 303,63 313,54 323,52 333,57 343,64 355,66 375,66
 
-  780,66 806,66 816,63 824,65 832,66 843,73 848,28 853,72 864,66 876,66 888,63 898,54 908,52 918,57 928,64 940,66 960,66
+          390,66 416,66 426,63 434,65 442,66 453,73 458,28 463,72 474,66 486,66 498,63 508,54 518,52 528,57 538,64 550,66 570,66
 
-  980,66 1000,66
-"/>
-  </svg>
-</div>
+          585,66 611,66 621,63 629,65 637,66 648,73 653,28 658,72 669,66 681,66 693,63 703,54 713,52 723,57 733,64 745,66 765,66
+
+          780,66 806,66 816,63 824,65 832,66 843,73 848,28 853,72 864,66 876,66 888,63 898,54 908,52 918,57 928,64 940,66 960,66
+
+          980,66 1000,66
+        "/>
+
+        <polyline class="ecg-line" transform="translate(1000 0)" points="
+          0,66 26,66 36,63 44,65 52,66 63,73 68,28 73,72 84,66 96,66 108,63 118,54 128,52 138,57 148,64 160,66 180,66
+
+          195,66 221,66 231,63 239,65 247,66 258,73 263,28 268,72 279,66 291,66 303,63 313,54 323,52 333,57 343,64 355,66 375,66
+
+          390,66 416,66 426,63 434,65 442,66 453,73 458,28 463,72 474,66 486,66 498,63 508,54 518,52 528,57 538,64 550,66 570,66
+
+          585,66 611,66 621,63 629,65 637,66 648,73 653,28 658,72 669,66 681,66 693,63 703,54 713,52 723,57 733,64 745,66 765,66
+
+          780,66 806,66 816,63 824,65 832,66 843,73 848,28 853,72 864,66 876,66 888,63 898,54 908,52 918,57 928,64 940,66 960,66
+
+          980,66 1000,66
+        "/>
+
+      </g>
+    </svg>
+  </div>
 </div>
 
 <div class="tile">
@@ -815,6 +834,43 @@ roomRef.on("value", (snapshot) => {
     // ------------------------------
     // Update monitor display
     // ------------------------------
+let ecgPhase = 0;
+let smoothedHr = patient.hr;
+let lastEcgFrameTime = null;
+
+function animateEcgWave(timestamp) {
+  const ecgGroup = document.getElementById("ecgAnimatedGroup");
+
+  if (!ecgGroup) {
+    requestAnimationFrame(animateEcgWave);
+    return;
+  }
+
+  if (lastEcgFrameTime === null) {
+    lastEcgFrameTime = timestamp;
+  }
+
+  const deltaSeconds = (timestamp - lastEcgFrameTime) / 1000;
+  lastEcgFrameTime = timestamp;
+
+  // Smoothly chase the actual HR instead of jumping instantly
+  smoothedHr += (patient.hr - smoothedHr) * 0.025;
+
+  const beatsPerStrip = 5;
+  const stripWidth = 1000;
+
+  const pixelsPerSecond = stripWidth / (beatsPerStrip * (60 / smoothedHr));
+
+  ecgPhase += pixelsPerSecond * deltaSeconds;
+
+  if (ecgPhase >= stripWidth) {
+    ecgPhase -= stripWidth;
+  }
+
+  ecgGroup.setAttribute("transform", `translate(${-ecgPhase} 0)`);
+
+  requestAnimationFrame(animateEcgWave);
+}
 
     function updateMonitor() {
       const map = calculateMAP(patient.systolic, patient.diastolic);
@@ -831,6 +887,7 @@ roomRef.on("value", (snapshot) => {
       document.getElementById("scenario").textContent = `Scenario: ${patient.scenario}`;
 
       applyWarningColours(map, cpp);
+      
     }
 function updateAlarmBand(alarmLevel, alarmMessages) {
   const alarmBand = document.getElementById("alarmBand");
@@ -1404,6 +1461,7 @@ function simNoradAfterSedation() {
     updateSimTimerDisplay();
 
     setInterval(updateClock, 1000);
+    requestAnimationFrame(animateEcgWave);
   </script>
 </body>
 </html>
