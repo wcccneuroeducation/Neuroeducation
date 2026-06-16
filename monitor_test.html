@@ -878,9 +878,13 @@ function animateGeneratedEcg(timestamp) {
 
   // Add new complexes based on HR timing
   while (ecgTimeSinceLastBeat >= secondsPerBeat) {
-    ecgGeneratedBeats.push({ x: 1040, scale: getEcgScaleForHr(patient.hr),
+    ecgGeneratedBeats.push({
+  x: 1040,
+  scale: getEcgScaleForHr(patient.hr),
   artScale: getArtScaleForHr(patient.hr),
-  icpScale: getIcpScaleForHr(patient.hr) });
+  icpScale: getIcpScaleForHr(patient.hr),
+  spo2Scale: getSpo2ScaleForHr(patient.hr)
+});
     ecgTimeSinceLastBeat -= secondsPerBeat;
   }
 
