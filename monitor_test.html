@@ -150,7 +150,7 @@
 }
 
 .etco2-trace {
-  color: #ffd400;
+  color: white;
 }
 .combined-values {
   display: grid;
@@ -226,6 +226,9 @@
       color: #cc66ff;
     }
 
+    .white {
+  color: white;
+}
     .small-value {
       font-size: 3rem;
     }
@@ -515,77 +518,7 @@
 
   <div class="wave-trace etco2-trace">
     <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
-      <g id="etco2AnimatedGroup">
-
-        <path d="
-          M 0 74
-          C 40 74, 70 74, 95 74
-
-          C 105 74, 118 60, 128 44
-          C 138 34, 152 30, 170 30
-          C 190 30, 210 31, 228 32
-          C 238 32, 244 40, 246 58
-          C 248 68, 250 74, 258 74
-
-          C 275 74, 300 74, 325 74
-          C 335 74, 348 60, 358 44
-          C 368 34, 382 30, 400 30
-          C 420 30, 440 31, 458 32
-          C 468 32, 474 40, 476 58
-          C 478 68, 480 74, 488 74
-
-          C 505 74, 530 74, 555 74
-          C 565 74, 578 60, 588 44
-          C 598 34, 612 30, 630 30
-          C 650 30, 670 31, 688 32
-          C 698 32, 704 40, 706 58
-          C 708 68, 710 74, 718 74
-
-          C 735 74, 760 74, 785 74
-          C 795 74, 808 60, 818 44
-          C 828 34, 842 30, 860 30
-          C 880 30, 900 31, 918 32
-          C 928 32, 934 40, 936 58
-          C 938 68, 940 74, 948 74
-
-          C 962 74, 980 74, 1000 74
-        "/>
-
-        <path transform="translate(1000 0)" d="
-          M 0 74
-          C 40 74, 70 74, 95 74
-
-          C 105 74, 118 60, 128 44
-          C 138 34, 152 30, 170 30
-          C 190 30, 210 31, 228 32
-          C 238 32, 244 40, 246 58
-          C 248 68, 250 74, 258 74
-
-          C 275 74, 300 74, 325 74
-          C 335 74, 348 60, 358 44
-          C 368 34, 382 30, 400 30
-          C 420 30, 440 31, 458 32
-          C 468 32, 474 40, 476 58
-          C 478 68, 480 74, 488 74
-
-          C 505 74, 530 74, 555 74
-          C 565 74, 578 60, 588 44
-          C 598 34, 612 30, 630 30
-          C 650 30, 670 31, 688 32
-          C 698 32, 704 40, 706 58
-          C 708 68, 710 74, 718 74
-
-          C 735 74, 760 74, 785 74
-          C 795 74, 808 60, 818 44
-          C 828 34, 842 30, 860 30
-          C 880 30, 900 31, 918 32
-          C 928 32, 934 40, 936 58
-          C 938 68, 940 74, 948 74
-
-          C 962 74, 980 74, 1000 74
-        "/>
-
-      </g>
+      <path id="etco2GeneratedPath"></path>
     </svg>
   </div>
 </div>
@@ -595,12 +528,12 @@
 
   <div class="combined-values">
     <div class="value-pair">
-      <span id="rr" class="value green compact-value">16</span>
+      <span id="rr" class="value whitecompact-value">16</span>
       <span class="value-pair-label">RR</span>
     </div>
 
     <div class="value-pair">
-      <span id="etco2" class="value yellow compact-value">4.8</span>
+      <span id="etco2" class="value white compact-value">4.8</span>
       <span class="value-pair-label">kPa</span>
     </div>
   </div>
@@ -966,31 +899,39 @@ function buildGeneratedArtPath(beats) {
   let currentX = 0;
 
   sortedBeats.forEach((beat) => {
-    const x = beat.x + 38; // pulse delay after ECG R wave
+    const x = beat.x + 38; // keeps the ART delay after ECG
     const scale = beat.artScale ?? 1;
 
     function ox(value) {
       return value * scale;
     }
 
-    const startX = x + ox(-52);
-    const endX = x + ox(132);
+    const startX = x + ox(-44);
+    const endX = x + ox(108);
 
-    // Only draw a baseline connector if the next wave starts ahead of us.
-    // This avoids ugly backwards jump lines when HR is very high.
     if (startX > currentX) {
-      d += `L ${startX} 74 `;
+      const gap = startX - currentX;
+
+      d += `
+        C ${currentX + gap * 0.20} 74,
+          ${currentX + gap * 0.45} 77,
+          ${currentX + gap * 0.70} 76
+        C ${currentX + gap * 0.85} 75,
+          ${startX - 4} 74,
+          ${startX} 74
+      `;
     }
 
     d += `
-      C ${x + ox(-46)} 74, ${x + ox(-40)} 66, ${x + ox(-32)} 52
-      C ${x + ox(-22)} 38, ${x + ox(-10)} 30, ${x + ox(4)} 30
-      C ${x + ox(18)} 30, ${x + ox(30)} 40, ${x + ox(38)} 50
-      C ${x + ox(46)} 58, ${x + ox(54)} 60, ${x + ox(60)} 58
-      C ${x + ox(66)} 55, ${x + ox(72)} 53, ${x + ox(78)} 56
-      C ${x + ox(88)} 60, ${x + ox(98)} 65, ${x + ox(108)} 69
-      C ${x + ox(116)} 72, ${x + ox(124)} 73, ${endX} 74
-    `;
+  C ${x + ox(-40)} 74, ${x + ox(-34)} 72, ${x + ox(-28)} 58
+  C ${x + ox(-22)} 38, ${x + ox(-12)} 24, ${x + ox(0)} 24
+
+  C ${x + ox(8)} 34, ${x + ox(16)} 50, ${x + ox(28)} 61
+  C ${x + ox(38)} 68, ${x + ox(46)} 65, ${x + ox(50)} 58
+
+  C ${x + ox(54)} 52, ${x + ox(58)} 56, ${x + ox(64)} 61
+  C ${x + ox(74)} 68, ${x + ox(88)} 72, ${endX} 74
+`;
 
     currentX = endX;
   });
@@ -1012,22 +953,32 @@ function buildGeneratedIcpPath(beats) {
       return value * scale;
     }
 
-    const startX = x + ox(-52);
-    const endX = x + ox(132);
+    const startX = x + ox(-58);
+    const endX = x + ox(150);
 
     if (startX > currentX) {
-      d += `L ${startX} 74 `;
+      const gap = startX - currentX;
+
+      d += `
+        C ${currentX + gap * 0.30} 75,
+          ${currentX + gap * 0.70} 75,
+          ${startX} 74
+      `;
     }
 
-    d += `
-      C ${x + ox(-46)} 74, ${x + ox(-36)} 62, ${x + ox(-24)} 50
-      C ${x + ox(-12)} 40, ${x + ox(2)} 38, ${x + ox(16)} 44
-      C ${x + ox(28)} 50, ${x + ox(38)} 56, ${x + ox(48)} 58
-      C ${x + ox(58)} 54, ${x + ox(68)} 52, ${x + ox(78)} 54
-      C ${x + ox(90)} 58, ${x + ox(104)} 64, ${x + ox(118)} 69
-      C ${x + ox(124)} 72, ${x + ox(128)} 73, ${endX} 74
-    `;
+ d += `
+  C ${x + ox(-50)} 74, ${x + ox(-42)} 72, ${x + ox(-34)} 66
+  C ${x + ox(-26)} 56, ${x + ox(-16)} 36, ${x + ox(-4)} 24
 
+  C ${x + ox(2)} 22, ${x + ox(6)} 28, ${x + ox(10)} 42
+  C ${x + ox(14)} 54, ${x + ox(18)} 58, ${x + ox(22)} 52
+
+  C ${x + ox(26)} 46, ${x + ox(30)} 44, ${x + ox(34)} 50
+  C ${x + ox(38)} 56, ${x + ox(42)} 58, ${x + ox(46)} 54
+
+  C ${x + ox(50)} 50, ${x + ox(54)} 50, ${x + ox(58)} 55
+  C ${x + ox(66)} 64, ${x + ox(82)} 72, ${endX} 74
+`;
     currentX = endX;
   });
 
@@ -1056,12 +1007,147 @@ function buildGeneratedSpo2Path(beats) {
     }
 
     d += `
-      C ${x + ox(-46)} 74, ${x + ox(-38)} 68, ${x + ox(-28)} 56
-      C ${x + ox(-16)} 44, ${x + ox(0)} 40, ${x + ox(16)} 44
-      C ${x + ox(32)} 48, ${x + ox(44)} 56, ${x + ox(54)} 62
-      C ${x + ox(64)} 66, ${x + ox(72)} 67, ${x + ox(82)} 63
-      C ${x + ox(92)} 60, ${x + ox(104)} 64, ${x + ox(116)} 70
-      C ${x + ox(124)} 73, ${x + ox(128)} 74, ${endX} 74
+  C ${x + ox(-40)} 74, ${x + ox(-34)} 72, ${x + ox(-28)} 58
+  C ${x + ox(-22)} 40, ${x + ox(-12)} 26, ${x + ox(0)} 26
+
+  C ${x + ox(8)} 34, ${x + ox(16)} 48, ${x + ox(28)} 58
+  C ${x + ox(38)} 64, ${x + ox(46)} 61, ${x + ox(50)} 55
+
+  C ${x + ox(54)} 51, ${x + ox(58)} 55, ${x + ox(64)} 59
+  C ${x + ox(74)} 66, ${x + ox(88)} 71, ${endX} 74
+`;
+
+    currentX = endX;
+  });
+
+  d += "L 1000 74";
+  return d;
+}
+let etco2GeneratedBreaths = [];
+let etco2LastFrameTime = null;
+let etco2TimeSinceLastBreath = 0;
+let etco2Seeded = false;
+
+// Fixed screen speed for the respiratory trace.
+// RR changes spacing, not scroll speed.
+const etco2PaperSpeed = 80;
+
+function getEtco2ScaleForRr(rr) {
+  if (rr <= 0) return 1;
+
+  const secondsPerBreath = 60 / rr;
+  const breathSpacing = etco2PaperSpeed * secondsPerBreath;
+
+  // Compress more at high RR so breaths do not overlap
+  return Math.min(1, Math.max(0.35, breathSpacing / 260));
+}
+
+function getEtco2PlateauY(etco2Value) {
+  // Higher EtCO2 gives a taller waveform.
+  // SVG y is inverted, so lower y = taller wave.
+  return Math.max(24, Math.min(58, 74 - etco2Value * 9));
+}
+
+function seedGeneratedEtco2Breaths() {
+  etco2GeneratedBreaths = [];
+
+  if (patient.rr <= 0) {
+    etco2Seeded = true;
+    return;
+  }
+
+  const secondsPerBreath = 60 / patient.rr;
+  const spacing = etco2PaperSpeed * secondsPerBreath;
+
+  for (let x = 1000; x > -260; x -= spacing) {
+    etco2GeneratedBreaths.push({
+      x,
+      scale: getEtco2ScaleForRr(patient.rr),
+      plateauY: getEtco2PlateauY(patient.etco2)
+    });
+  }
+
+  etco2TimeSinceLastBreath = 0;
+  etco2Seeded = true;
+}
+
+function animateGeneratedEtco2(timestamp) {
+  const etco2Path = document.getElementById("etco2GeneratedPath");
+
+  if (!etco2Path) {
+    requestAnimationFrame(animateGeneratedEtco2);
+    return;
+  }
+
+  if (!etco2Seeded) {
+    seedGeneratedEtco2Breaths();
+  }
+
+  if (etco2LastFrameTime === null) {
+    etco2LastFrameTime = timestamp;
+  }
+
+  const deltaSeconds = (timestamp - etco2LastFrameTime) / 1000;
+  etco2LastFrameTime = timestamp;
+
+  if (patient.rr > 0) {
+    const secondsPerBreath = 60 / patient.rr;
+
+    etco2TimeSinceLastBreath += deltaSeconds;
+
+    while (etco2TimeSinceLastBreath >= secondsPerBreath) {
+      etco2GeneratedBreaths.push({
+        x: 1060,
+        scale: getEtco2ScaleForRr(patient.rr),
+        plateauY: getEtco2PlateauY(patient.etco2)
+      });
+
+      etco2TimeSinceLastBreath -= secondsPerBreath;
+    }
+  }
+
+  etco2GeneratedBreaths.forEach((breath) => {
+    breath.x -= etco2PaperSpeed * deltaSeconds;
+  });
+
+  etco2GeneratedBreaths = etco2GeneratedBreaths.filter((breath) => breath.x > -260);
+
+  etco2Path.setAttribute("d", buildGeneratedEtco2Path(etco2GeneratedBreaths));
+
+  requestAnimationFrame(animateGeneratedEtco2);
+}
+
+function buildGeneratedEtco2Path(breaths) {
+  const sortedBreaths = [...breaths].sort((a, b) => a.x - b.x);
+
+  let d = "M 0 74 ";
+  let currentX = 0;
+
+  sortedBreaths.forEach((breath) => {
+    const x = breath.x;
+    const scale = breath.scale ?? 1;
+    const plateauY = breath.plateauY ?? 31;
+
+    function ox(value) {
+      return value * scale;
+    }
+
+    const startX = x + ox(-70);
+    const endX = x + ox(170);
+
+    if (startX > currentX) {
+      d += `L ${startX} 74 `;
+    }
+
+    d += `
+      C ${x + ox(-60)} 74, ${x + ox(-50)} 74, ${x + ox(-42)} 70
+      C ${x + ox(-34)} 62, ${x + ox(-26)} 44, ${x + ox(-14)} ${plateauY + 4}
+
+      C ${x + ox(-4)} ${plateauY}, ${x + ox(20)} ${plateauY}, ${x + ox(50)} ${plateauY + 1}
+      C ${x + ox(68)} ${plateauY + 1}, ${x + ox(82)} ${plateauY + 4}, ${x + ox(90)} 48
+
+      C ${x + ox(98)} 60, ${x + ox(104)} 70, ${x + ox(112)} 74
+      L ${endX} 74
     `;
 
     currentX = endX;
@@ -1660,7 +1746,7 @@ function simNoradAfterSedation() {
 
     setInterval(updateClock, 1000);
     requestAnimationFrame(animateCardiacWaves);
-    requestAnimationFrame(animateEtco2Wave);
+    requestAnimationFrame(animateGeneratedEtco2);
     requestAnimationFrame(animateGeneratedEcg);
   </script>
 </body>
