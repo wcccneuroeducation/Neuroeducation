@@ -85,6 +85,18 @@
       font-size: 1rem;
       margin-top: 18px;
     }
+    .top-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.timer-display {
+  color: #00ccff;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
   </style>
 </head>
 
@@ -93,8 +105,19 @@
   <div class="status" id="connectionStatus">Connecting...</div>
 <div class="scenario">
     Scenario: <span id="scenarioValue">--</span>
+    <div class="timer-display">
+    Sim timer: <span id="timerValue">00:00</span>
+  </div>
   </div>
   <div class="grid">
+    <div class="control-card">
+  <div class="label">Simulation Control</div>
+
+  <div class="button-row">
+    <button onclick="showEndOfSimPopup()">End of Sim</button>
+    <button onclick="clearEndOfSimPopup()">Clear Message</button>
+  </div>
+</div>
 <div class="control-card">
   <div class="label">Autoregulation Sim</div>
 
@@ -201,11 +224,11 @@
     let patient = {
       hr: 86,
       spo2: 98,
-      systolic: 126,
-      diastolic: 74,
+      systolic: 120,
+      diastolic: 70,
       icp: 14,
       rr: 16,
-      etco2: 4.8,
+      etco2: 4.3,
       scenario: "Baseline",
       sedationGiven: false,
       timerSeconds: 0
@@ -214,11 +237,11 @@
     const baselinePatient = {
       hr: 86,
       spo2: 98,
-      systolic: 126,
-      diastolic: 74,
+      systolic: 120,
+      diastolic: 70,
       icp: 14,
       rr: 16,
-      etco2: 4.8,
+      etco2: 4.3,
       scenario: "Baseline",
       sedationGiven: false,
       timerSeconds: 0
@@ -241,7 +264,16 @@
       document.getElementById("connectionStatus").textContent = "Connected to neuro1";
       updateControlDisplay();
     });
+function formatTimer(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
 
+  return (
+    String(minutes).padStart(2, "0") +
+    ":" +
+    String(remainingSeconds).padStart(2, "0")
+  );
+}
     // ------------------------------
     // Display update
     // ------------------------------
@@ -254,6 +286,9 @@
   document.getElementById("rrValue").textContent = patient.rr;
   document.getElementById("etco2Value").textContent = Number(patient.etco2).toFixed(1);
   document.getElementById("scenarioValue").textContent = patient.scenario;
+
+  document.getElementById("timerValue").textContent =
+    formatTimer(patient.timerSeconds || 0);
 }
 
     // ------------------------------
@@ -281,7 +316,19 @@ updatedPatient.etco2 = Math.round(updatedPatient.etco2 * 10) / 10;
 
       roomRef.update(updatedPatient);
     }
+function showEndOfSimPopup() {
+  roomRef.update({
+    monitorMessage: "END OF SIM",
+    showMonitorMessage: true
+  });
+}
 
+function clearEndOfSimPopup() {
+  roomRef.update({
+    monitorMessage: "",
+    showMonitorMessage: false
+  });
+}
     function resetPatient() {
   clearGradualChanges();
   stopSimTimer();
@@ -432,8 +479,8 @@ function simStartKinked() {
   writePatient({
     hr: 86,
     spo2: 98,
-    systolic: 126,
-    diastolic: 74,
+    systolic: 120,
+    diastolic: 70,
     icp: 14,
     rr: 16,
     etco2: 4.8,
@@ -446,7 +493,7 @@ function simStartKinked() {
 
   gradualIntChangeOverTime("hr", 88, twoMinutes);
   gradualIntChangeOverTime("spo2", 97, twoMinutes);
-  gradualIntChangeOverTime("systolic", 135, twoMinutes);
+  gradualIntChangeOverTime("systolic", 125, twoMinutes);
   gradualIntChangeOverTime("diastolic", 65, twoMinutes);
   gradualIntChangeOverTime("icp", 26, twoMinutes);
   gradualDecimalChangeOverTime("etco2", 4.6, 0.1, twoMinutes);

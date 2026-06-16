@@ -383,7 +383,32 @@
 .flash-alarm {
   animation: flashAlarm 1.5s infinite;
 }
+.monitor-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.75);
 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitor-popup.hidden {
+  display: none;
+}
+
+.monitor-popup-text {
+  border: 4px solid white;
+  border-radius: 18px;
+  padding: 40px 70px;
+  background: black;
+  color: white;
+  font-size: 4rem;
+  font-weight: bold;
+  letter-spacing: 4px;
+  text-align: center;
+}
 .enable-sound-button {
   position: fixed;
   top: 70px;
@@ -417,6 +442,9 @@
 </head>
 
 <body>
+  <div id="monitorPopup" class="monitor-popup hidden">
+  <div id="monitorPopupText" class="monitor-popup-text">END OF SIM</div>
+</div>
   <audio id="yellowAlarmSound" src="yalarm.mp3"></audio>
 <audio id="redAlarmSound" src="ralarm.mp3"></audio>
 <button id="enableSoundButton" class="enable-sound-button" onclick="enableAlarmSound()">
@@ -633,7 +661,9 @@ const roomRef = database.ref("simRooms/neuro1");
       icp: 14,
       rr: 16,
       etco2: 4.8,
-      scenario: "Baseline"
+      scenario: "Baseline",
+      monitorMessage: "",
+  showMonitorMessage: false
     };
 const simState = {
   sedationGiven: false,
@@ -653,6 +683,8 @@ roomRef.on("value", (snapshot) => {
   patient.rr = data.rr;
   patient.etco2 = data.etco2;
   patient.scenario = data.scenario;
+   patient.monitorMessage = data.monitorMessage || "";
+  patient.showMonitorMessage = data.showMonitorMessage || false;
 
   simState.sedationGiven = data.sedationGiven || false;
   simState.timerSeconds = data.timerSeconds || 0;
@@ -1188,6 +1220,19 @@ function buildGeneratedEtco2FillPath(breaths) {
   // Close the EtCO2 trace down to the baseline so it can be filled.
   return `${linePath} L 1000 74 L 0 74 Z`;
 }
+function updateMonitorPopup() {
+  const popup = document.getElementById("monitorPopup");
+  const popupText = document.getElementById("monitorPopupText");
+
+  if (!popup || !popupText) return;
+
+  if (patient.showMonitorMessage) {
+    popupText.textContent = patient.monitorMessage || "END OF SIM";
+    popup.classList.remove("hidden");
+  } else {
+    popup.classList.add("hidden");
+  }
+}
     function updateMonitor() {
       const map = calculateMAP(patient.systolic, patient.diastolic);
       const cpp = calculateCPP(map, patient.icp);
@@ -1203,6 +1248,7 @@ function buildGeneratedEtco2FillPath(breaths) {
       document.getElementById("scenario").textContent = `Scenario: ${patient.scenario}`;
 
       applyWarningColours(map, cpp);
+      updateMonitorPopup();
       
     }
 function updateAlarmBands(redMessages, yellowMessages) {
