@@ -152,6 +152,11 @@
 .etco2-trace {
   color: white;
 }
+
+.wave-trace path.etco2-fill {
+  fill: rgba(255, 255, 255, 0.712);
+  stroke: none;
+}
 .combined-values {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -329,13 +334,21 @@
 .sim-controls button:hover {
   background: #222;
 }
+.alarm-stack {
+  grid-column: 2;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
 .alarm-band {
-  width: 320px;
-  height: 34px;
+  width: 100%;
+  height: 24px;
   box-sizing: border-box;
   padding: 0;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: bold;
   text-align: center;
   letter-spacing: 1px;
@@ -347,9 +360,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  justify-self: center;
 }
-
 .alarm-band.hidden {
   visibility: hidden;
   background: transparent;
@@ -416,12 +427,17 @@
     
 
     <div class="header">
-      <div class="bed-label">Neuro ITU Sim Monitor</div>
-      <div id="alarmBand" class="alarm-band hidden">
-  Alarm
+  <div class="bed-label">Neuro ITU Sim Monitor</div>
+
+  <div class="alarm-stack">
+    <div id="redAlarmBand" class="alarm-band hidden"></div>
+    <div id="yellowAlarmBand" class="alarm-band hidden"></div>
+  </div>
+
+  <div id="clock">--:--:--</div>
 </div>
-      <div id="clock">--:--:--</div>
-    </div>
+  
+     
 
     <div class="vitals">
 
@@ -463,8 +479,9 @@
     </div>
 
     <div class="value-pair">
-      <span class="value-pair-label">MAP</span>
       <span id="map" class="value compact-value map-value">91</span>
+      <span class="value-pair-label">MAP</span>
+      
     </div>
   </div>
 </div>
@@ -518,6 +535,7 @@
 
   <div class="wave-trace etco2-trace">
     <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+      <path id="etco2FillPath" class="etco2-fill"></path>
       <path id="etco2GeneratedPath"></path>
     </svg>
   </div>
@@ -528,7 +546,7 @@
 
   <div class="combined-values">
     <div class="value-pair">
-      <span id="rr" class="value whitecompact-value">16</span>
+      <span id="rr" class="value white compact-value">16</span>
       <span class="value-pair-label">RR</span>
     </div>
 
@@ -1112,7 +1130,15 @@ function animateGeneratedEtco2(timestamp) {
 
   etco2GeneratedBreaths = etco2GeneratedBreaths.filter((breath) => breath.x > -260);
 
-  etco2Path.setAttribute("d", buildGeneratedEtco2Path(etco2GeneratedBreaths));
+  const etco2LineD = buildGeneratedEtco2Path(etco2GeneratedBreaths);
+const etco2FillD = buildGeneratedEtco2FillPath(etco2GeneratedBreaths);
+
+etco2Path.setAttribute("d", etco2LineD);
+
+const etco2FillPath = document.getElementById("etco2FillPath");
+if (etco2FillPath) {
+  etco2FillPath.setAttribute("d", etco2FillD);
+}
 
   requestAnimationFrame(animateGeneratedEtco2);
 }
@@ -1156,6 +1182,12 @@ function buildGeneratedEtco2Path(breaths) {
   d += "L 1000 74";
   return d;
 }
+function buildGeneratedEtco2FillPath(breaths) {
+  const linePath = buildGeneratedEtco2Path(breaths);
+
+  // Close the EtCO2 trace down to the baseline so it can be filled.
+  return `${linePath} L 1000 74 L 0 74 Z`;
+}
     function updateMonitor() {
       const map = calculateMAP(patient.systolic, patient.diastolic);
       const cpp = calculateCPP(map, patient.icp);
@@ -1173,25 +1205,26 @@ function buildGeneratedEtco2Path(breaths) {
       applyWarningColours(map, cpp);
       
     }
-function updateAlarmBand(alarmLevel, alarmMessages) {
-  const alarmBand = document.getElementById("alarmBand");
+function updateAlarmBands(redMessages, yellowMessages) {
+  const redAlarmBand = document.getElementById("redAlarmBand");
+  const yellowAlarmBand = document.getElementById("yellowAlarmBand");
 
-  if (alarmLevel === "none" || alarmMessages.length === 0) {
-    alarmBand.className = "alarm-band hidden";
-    alarmBand.textContent = "";
-    return;
+  if (redMessages.length > 0) {
+    redAlarmBand.className = "alarm-band red-alarm";
+    redAlarmBand.textContent = redMessages.join(" / ");
+  } else {
+    redAlarmBand.className = "alarm-band hidden";
+    redAlarmBand.textContent = "";
   }
 
-  if (alarmLevel === "red") {
-    alarmBand.className = "alarm-band red-alarm";
-    alarmBand.textContent = alarmMessages.join(" / ");
-    return;
+  if (yellowMessages.length > 0) {
+    yellowAlarmBand.className = "alarm-band yellow-alarm";
+    yellowAlarmBand.textContent = yellowMessages.join(" / ");
+  } else {
+    yellowAlarmBand.className = "alarm-band hidden";
+    yellowAlarmBand.textContent = "";
   }
 
-  if (alarmLevel === "yellow") {
-    alarmBand.className = "alarm-band yellow-alarm";
-    alarmBand.textContent = alarmMessages.join(" / ");
-  }
 }
     // ------------------------------
     // Simple colour warnings
@@ -1229,14 +1262,15 @@ function setAlarmSound(alarmLevel) {
   otherSound.pause();
   otherSound.currentTime = 0;
 
-  // If same alarm is already active AND actually playing, leave it alone
-  if (alarmLevel === activeAlarmLevel && !currentSound.paused) {
-    return;
-  }
+  // If the same alarm level is already active, leave the timing alone.
+// This prevents yellow alarms restarting early when values change.
+if (alarmLevel === activeAlarmLevel) {
+  return;
+}
 
-  // Otherwise start/restart the correct alarm
-  activeAlarmLevel = alarmLevel;
-  alarmPlayToken++;
+// Otherwise start/restart only when the alarm level changes
+activeAlarmLevel = alarmLevel;
+alarmPlayToken++;
 
   if (alarmLoopTimeout !== null) {
     clearTimeout(alarmLoopTimeout);
@@ -1338,69 +1372,73 @@ function applyWarningColours(map, cpp) {
   cppElement.className = "value yellow compact-value";
   mapElement.className = "value compact-value map-value";
 
-  let alarmLevel = "none";
-  let alarmMessages = [];
+  let redMessages = [];
+  let yellowMessages = [];
 
   // ------------------------------
-  // RED priority alarms
+  // RED alarms
   // ------------------------------
 
   if (patient.hr < 50 || patient.hr >= 130) {
     hrElement.classList.add("flash-alarm");
-    alarmLevel = "red";
-    alarmMessages.push("HR");
+    redMessages.push("HR");
   }
 
   if (patient.spo2 < 92) {
     spo2Element.classList.add("flash-alarm");
-    alarmLevel = "red";
-    alarmMessages.push("SpO₂");
+    redMessages.push("SpO₂");
   }
 
   if (map < 65) {
     mapElement.classList.add("flash-alarm");
-    alarmLevel = "red";
-    alarmMessages.push("MAP");
+    redMessages.push("MAP");
   }
 
   if (patient.icp > 35) {
     icpElement.classList.add("flash-alarm");
-    alarmLevel = "red";
-    alarmMessages.push("ICP");
+    redMessages.push("ICP");
   }
 
   if (cpp < 50) {
     cppElement.classList.add("flash-alarm");
-    alarmLevel = "red";
-    alarmMessages.push("CPP");
+    redMessages.push("CPP");
   }
 
   // ------------------------------
-  // YELLOW alarms only if no red alarm active
+  // YELLOW alarms
+  // These still flash visually even if red alarm is active
   // ------------------------------
 
-  if (alarmLevel !== "red") {
-    if (patient.hr >= 120 && patient.hr < 130) {
-      hrElement.classList.add("flash-alarm");
-      alarmLevel = "yellow";
-      alarmMessages.push("HR");
-    }
+  if (patient.hr >= 120 && patient.hr < 130) {
+    hrElement.classList.add("flash-alarm");
+    yellowMessages.push("HR");
+  }
 
-    if (patient.icp > 20 && patient.icp <= 35) {
-      icpElement.classList.add("flash-alarm");
-      alarmLevel = "yellow";
-      alarmMessages.push("ICP");
-    }
+  if (patient.icp > 20 && patient.icp <= 35) {
+    icpElement.classList.add("flash-alarm");
+    yellowMessages.push("ICP");
+  }
 
-    if (cpp <= 65 && cpp >= 50) {
-      cppElement.classList.add("flash-alarm");
-      alarmLevel = "yellow";
-      alarmMessages.push("CPP");
-    }
+  if (cpp <= 65 && cpp >= 50) {
+    cppElement.classList.add("flash-alarm");
+    yellowMessages.push("CPP");
+  }
+
+  // ------------------------------
+  // Sound priority
+  // Red sound overrides yellow sound
+  // ------------------------------
+
+  let alarmLevel = "none";
+
+  if (redMessages.length > 0) {
+    alarmLevel = "red";
+  } else if (yellowMessages.length > 0) {
+    alarmLevel = "yellow";
   }
 
   setAlarmSound(alarmLevel);
-  updateAlarmBand(alarmLevel, alarmMessages);
+  updateAlarmBands(redMessages, yellowMessages);
 }
 
     // ------------------------------
