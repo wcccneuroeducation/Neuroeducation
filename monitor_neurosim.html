@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ITU Monitor Sim</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+    }
+.monitor-frame {
+  width: 100vw;
+  height: 100vh;
+  background: #1b1b1b;
+  padding: 28px;
+  box-sizing: border-box;
+  border-radius: 36px;
+
+  border: 3px solid #2a2a2a;
+
+  box-shadow:
+    inset 4px 4px 8px rgba(255,255,255,0.08),
+    inset -6px -6px 12px rgba(0,0,0,0.85),
+    0 14px 30px rgba(0,0,0,0.8);
+
+  display: flex;
+}
+
+.monitor-frame::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.12);
+  pointer-events: none;
+}
+
+.monitor {
+  width: 100%;
+  height: 100%;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+
+  gap: 12px;
+  padding: 14px 18px 14px 24px;
+  box-sizing: border-box;
+
+  border-radius: 22px;
+  overflow: hidden;
+  border: 4px solid #050505;
+
+  background: black;
+}
+.monitor-frame {
+  position: relative;
+}
+    .header {
+  grid-column: 1 / 4;
+  height: 54px;
+  display: grid;
+  grid-template-columns: 1fr 360px 1fr;
+  align-items: center;
+  border-bottom: 2px solid #333;
+  padding-bottom: 0;
+  font-size: 1.2rem;
+  color: #ccc;
+}
+
+.bed-label {
+  grid-column: 1;
+  justify-self: start;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+#alarmBand {
+  grid-column: 2;
+  justify-self: center;
+}
+
+#clock {
+  grid-column: 3;
+  justify-self: end;
+  text-align: right;
+  min-width: 90px;
+}
+    .bed-label {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .vitals {
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: repeat(5, 1fr);
+  gap: 10px;
+  align-content: center;
+}
+    .tile {
+  border: 2px solid #333;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #050505;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.wave-row {
+  border: 2px solid #333;
+  border-radius: 12px;
+  background: #020202;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+.wave-label {
+  width: 70px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #aaa;
+}
+
+.wave-line {
+  flex: 1;
+  height: 2px;
+  background: #222;
+  position: relative;
+}
+
+.wave-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  border-top: 2px dashed #333;
+}
+.wave-trace {
+  flex: 1;
+  height: 64px;
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-trace svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.wave-trace path,
+.wave-trace polyline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ecg-trace {
+  color: #00ff66;
+}
+
+.art-trace {
+  color: #ff3333;
+}
+
+.icp-trace {
+  color: #ffd400;
+}
+
+.spo2-trace {
+  color: #00ccff;
+}
+
+.etco2-trace {
+  color: white;
+}
+
+.wave-trace path.etco2-fill {
+  fill: rgba(255, 255, 255, 0.712);
+  stroke: none;
+}
+.combined-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  column-gap: 18px;
+  white-space: nowrap;
+  width: 100%;
+}
+.value-pair {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.value-pair:nth-child(2) {
+  justify-content: flex-start;
+}
+
+.value-pair-label {
+  font-size: 1rem;
+  color: #aaa;
+  font-weight: bold;
+}
+
+.map-value {
+  color: #ff3333;
+}
+
+
+.value.compact-value {
+  font-size: 2.8rem;
+}
+
+.compact-tile {
+  gap: 6px;
+}
+    .label {
+      font-size: 1.2rem;
+      color: #aaa;
+      letter-spacing: 1px;
+    }
+
+    .value {
+      font-size: 4rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .unit {
+      font-size: 1rem;
+      color: #aaa;
+      margin-left: 6px;
+    }
+
+    .green {
+      color: #00ff66;
+    }
+
+    .blue {
+      color: #00ccff;
+    }
+
+    .yellow {
+      color: #ffd400;
+    }
+
+    .red {
+      color: #ff3333;
+    }
+
+    .purple {
+      color: #cc66ff;
+    }
+
+    .white {
+  color: white;
+}
+    .small-value {
+      font-size: 3rem;
+    }
+
+    .footer {
+      grid-column: 1 / 4;
+      border-top: 2px solid #333;
+      padding-top: 10px;
+      font-size: 1rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 900px) {
+      
+.value.compact-value {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+      .value {
+        font-size: 3.2rem;
+      }
+
+      .small-value {
+        font-size: 2.6rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .monitor {
+        padding: 12px;
+        gap: 12px;
+      }
+
+      .vitals {
+        grid-template-columns: 1fr;
+      }
+
+      .tile {
+        min-height: 100px;
+      }
+
+      .value {
+        font-size: 2.8rem;
+      }
+      .value.compact-value {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+    }
+    .test-controls {
+  grid-column: 1 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 2px solid #333;
+  padding-top: 12px;
+}
+
+.test-controls button {
+  background: #111;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.test-controls button:hover {
+  background: #222;
+}
+
+.reset-button {
+  border-color: #ff5555 !important;
+  color: #ff7777 !important;
+}
+.sim-controls {
+  grid-column: 1 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 2px solid #333;
+  padding-top: 12px;
+}
+
+.sim-controls button {
+  background: #111;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.sim-controls button:hover {
+  background: #222;
+}
+.alarm-stack {
+  grid-column: 2;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.alarm-band {
+  width: 100%;
+  height: 24px;
+  box-sizing: border-box;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 1px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.alarm-band.hidden {
+  visibility: hidden;
+  background: transparent;
+  color: transparent;
+}
+
+.alarm-band.yellow-alarm {
+  visibility: visible;
+  background: #ffd400;
+  color: black;
+}
+
+.alarm-band.red-alarm {
+  visibility: visible;
+  background: #ff3333;
+  color: white;
+}
+
+
+.flash-alarm {
+  animation: flashAlarm 1.5s infinite;
+}
+.monitor-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.75);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monitor-popup.hidden {
+  display: none;
+}
+
+.monitor-popup-text {
+  border: 4px solid white;
+  border-radius: 18px;
+  padding: 40px 70px;
+  background: black;
+  color: white;
+  font-size: 4rem;
+  font-weight: bold;
+  letter-spacing: 4px;
+  text-align: center;
+}
+.enable-sound-button {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 9999;
+  background: #222;
+  color: white;
+  border: 1px solid #666;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.enable-sound-button.hidden {
+  display: none;
+}
+
+@keyframes flashAlarm {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+  </style>
+</head>
+
+<body>
+  <div id="monitorPopup" class="monitor-popup hidden">
+  <div id="monitorPopupText" class="monitor-popup-text">END OF SIM</div>
+</div>
+  <audio id="yellowAlarmSound" src="yalarm.mp3"></audio>
+<audio id="redAlarmSound" src="ralarm.mp3"></audio>
+<button id="enableSoundButton" class="enable-sound-button" onclick="enableAlarmSound()">
+  Tap to enable alarm sound
+</button>
+  <div class="monitor-frame">
+  <div class="monitor">
+
+    
+
+    <div class="header">
+  <div class="bed-label">Neuro ITU Sim Monitor</div>
+
+  <div class="alarm-stack">
+    <div id="redAlarmBand" class="alarm-band hidden"></div>
+    <div id="yellowAlarmBand" class="alarm-band hidden"></div>
+  </div>
+
+  <div id="clock">--:--:--</div>
+</div>
+  
+     
+
+    <div class="vitals">
+
+      <div class="wave-row">
+  <div class="wave-label">ECG</div>
+
+  <div class="wave-trace ecg-trace">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+      <path id="ecgGeneratedPath"></path>
+    </svg>
+  </div>
+</div>
+
+<div class="tile">
+  <div class="label">HR</div>
+  <div>
+    <span id="hr" class="value green">86</span>
+    <span class="unit">bpm</span>
+  </div>
+</div>
+
+<div id="artWaveRow" class="wave-row">
+  <div class="wave-label">ART</div>
+
+  <div class="wave-trace art-trace">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+      <path id="artGeneratedPath"></path>
+    </svg>
+  </div>
+</div>
+
+<div id="bpTile" class="tile compact-tile">
+  <div class="label">BP / MAP</div>
+
+  <div class="combined-values">
+    <div class="value-pair">
+      <span id="bp" class="value red compact-value">126/74</span>
+      <span class="value-pair-label">mmHg</span>
+    </div>
+
+    <div class="value-pair">
+      <span id="map" class="value compact-value map-value">91</span>
+      <span class="value-pair-label">MAP</span>
+      
+    </div>
+  </div>
+</div>
+
+<div id="icpWaveRow" class="wave-row">
+  <div class="wave-label">ICP</div>
+
+  <div class="wave-trace icp-trace">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+      <path id="icpGeneratedPath"></path>
+    </svg>
+  </div>
+</div>
+
+<div id="icpTile" class="tile compact-tile">
+  <div class="label">ICP / CPP</div>
+
+  <div class="combined-values">
+    <div class="value-pair">
+      <span id="icp" class="value yellow compact-value">14</span>
+      <span class="value-pair-label">ICP</span>
+    </div>
+
+    <div class="value-pair">
+      <span id="cpp" class="value yellow compact-value">--</span>
+      <span class="value-pair-label">CPP</span>
+    </div>
+  </div>
+</div>
+
+<div class="wave-row">
+  <div class="wave-label">SpO₂</div>
+
+  <div class="wave-trace spo2-trace">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+      <path id="spo2GeneratedPath"></path>
+    </svg>
+  </div>
+</div>
+
+<div class="tile">
+  <div class="label">SpO₂</div>
+  <div>
+    <span id="spo2" class="value blue">98</span>
+    <span class="unit">%</span>
+  </div>
+</div>
+
+<div id="etco2WaveRow" class="wave-row">
+  <div class="wave-label">EtCO₂</div>
+
+  <div class="wave-trace etco2-trace">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
+      <path id="etco2FillPath" class="etco2-fill"></path>
+      <path id="etco2GeneratedPath"></path>
+    </svg>
+  </div>
+</div>
+
+<div id="etco2Tile" class="tile compact-tile">
+  <div class="label">RR / EtCO₂</div>
+
+  <div class="combined-values">
+    <div class="value-pair">
+      <span id="rr" class="value white compact-value">16</span>
+      <span class="value-pair-label">RR</span>
+    </div>
+
+    <div class="value-pair">
+      <span id="etco2" class="value white compact-value">4.8</span>
+      <span class="value-pair-label">kPa</span>
+    </div>
+  </div>
+</div>
+<!--<div class="test-controls">
+  <button onclick="changeValue('hr', 5)">HR +5</button>
+  <button onclick="changeValue('hr', -5)">HR -5</button>
+
+  <button onclick="changeValue('spo2', 1)">SpO₂ +1</button>
+  <button onclick="changeValue('spo2', -1)">SpO₂ -1</button>
+
+  <button onclick="changeValue('systolic', 5)">Sys +5</button>
+  <button onclick="changeValue('systolic', -5)">Sys -5</button>
+
+  <button onclick="changeValue('diastolic', 5)">Dia +5</button>
+  <button onclick="changeValue('diastolic', -5)">Dia -5</button>
+
+  <button onclick="changeValue('icp', 1)">ICP +1</button>
+  <button onclick="changeValue('icp', -1)">ICP -1</button>
+
+  <button onclick="changeValue('rr', 1)">RR +1</button>
+  <button onclick="changeValue('rr', -1)">RR -1</button>
+
+  <button onclick="changeValue('etco2', 0.2)">EtCO₂ +0.2</button>
+  <button onclick="changeValue('etco2', -0.2)">EtCO₂ -0.2</button>
+  </div>
+
+<div class="sim-controls">
+  <button onclick="simStartKinked()">Start: SIM</button>
+<button onclick="simBasicCare()">Basic nursing care</button>
+<button onclick="simAgitatedRise()">Awake/agitated rise</button>
+<button onclick="simNoradEarly()">Norad too early</button>
+<button onclick="simSedationFirst()">Sedation increased</button>
+<button onclick="simNoradAfterSedation()">Norad after sedation</button>
+<!--<button onclick="scenarioRaisedICP()">Raised ICP</button>
+<button onclick="scenarioHeadUp()">Head up 30°</button>
+<button onclick="scenarioSedation()">Sedation increased</button>
+<button onclick="scenarioNorad()">Norad increased</button> 
+  <button class="reset-button" onclick="resetPatient()">Reset</button>-->
+</div>
+    <div class="footer">
+  <div>Simulation display only</div>
+  <div id="simTimer">Sim timer: 00:00</div>
+  <div id="scenario">Scenario: Baseline</div>
+</div>
+
+  </div> 
+  </div>  
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+
+    // ------------------------------
+// Firebase setup
+// ------------------------------
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQOx2eQRwPFlHC2EmQREtdFYb9Mha7zuQ",
+  authDomain: "neuro-itu-monitor-sim.firebaseapp.com",
+  databaseURL: "https://neuro-itu-monitor-sim-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "neuro-itu-monitor-sim",
+  storageBucket: "neuro-itu-monitor-sim.firebasestorage.app",
+  messagingSenderId: "610257056899",
+  appId: "1:610257056899:web:4763a538136eaf95a8d7b6"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
+const roomRef = database.ref("simRooms/neuro1");
+    // ------------------------------
+    // Starting patient values
+    // ------------------------------
+
+    const patient = {
+      hr: 86,
+      spo2: 98,
+      systolic: 126,
+      diastolic: 74,
+      icp: 14,
+      rr: 16,
+      etco2: 4.8,
+      showIcpWave: true,
+      showArtWave: true,
+      showEtco2Wave: true,
+      scenario: "Baseline",
+      monitorMessage: "",
+  showMonitorMessage: false
+    };
+const simState = {
+  sedationGiven: false,
+  timerInterval: null,
+  timerSeconds: 0
+};
+roomRef.on("value", (snapshot) => {
+  const data = snapshot.val();
+
+  if (!data) return;
+
+  patient.hr = data.hr;
+  patient.spo2 = data.spo2;
+  patient.systolic = data.systolic;
+  patient.diastolic = data.diastolic;
+  patient.showIcpWave = data.showIcpWave !== false;
+  patient.showArtWave = data.showArtWave !== false;
+  patient.showEtco2Wave = data.showEtco2Wave !== false;
+  patient.icp = data.icp;
+  patient.rr = data.rr;
+  patient.etco2 = data.etco2;
+  patient.scenario = data.scenario;
+   patient.monitorMessage = data.monitorMessage || "";
+  patient.showMonitorMessage = data.showMonitorMessage || false;
+
+  simState.sedationGiven = data.sedationGiven || false;
+  simState.timerSeconds = data.timerSeconds || 0;
+
+  updateMonitor();
+  updateSimTimerDisplay();
+});
+    // ------------------------------
+    // Calculation functions
+    // ------------------------------
+
+    function calculateMAP(systolic, diastolic) {
+      return Math.round((systolic + (2 * diastolic)) / 3);
+    }
+
+    function calculateCPP(map, icp) {
+      return Math.round(map - icp);
+    }
+
+    // ------------------------------
+    // Update monitor display
+    // ------------------------------
+
+
+let cardiacPhase = 0;
+let smoothedHr = patient.hr;
+let lastCardiacFrameTime = null;
+
+function animateCardiacWaves(timestamp) {
+  const cardiacGroups = [
+  
+  
+].filter(Boolean);
+
+  if (lastCardiacFrameTime === null) {
+    lastCardiacFrameTime = timestamp;
+  }
+
+  const deltaSeconds = (timestamp - lastCardiacFrameTime) / 1000;
+  lastCardiacFrameTime = timestamp;
+
+  smoothedHr += (patient.hr - smoothedHr) * 0.025;
+
+  const beatsPerStrip = 5;
+  const stripWidth = 1000;
+
+  const pixelsPerSecond = stripWidth / (beatsPerStrip * (60 / smoothedHr));
+
+  cardiacPhase += pixelsPerSecond * deltaSeconds;
+
+  if (cardiacPhase >= stripWidth) {
+    cardiacPhase -= stripWidth;
+  }
+
+  cardiacGroups.forEach((group) => {
+    group.setAttribute("transform", `translate(${-cardiacPhase} 0)`);
+  });
+
+  requestAnimationFrame(animateCardiacWaves);
+  
+}
+let etco2Phase = 0;
+let smoothedRr = patient.rr;
+let lastEtco2FrameTime = null;
+
+function animateEtco2Wave(timestamp) {
+  const etco2Group = document.getElementById("etco2AnimatedGroup");
+
+  if (!etco2Group) {
+    requestAnimationFrame(animateEtco2Wave);
+    return;
+  }
+
+  if (lastEtco2FrameTime === null) {
+    lastEtco2FrameTime = timestamp;
+  }
+
+  const deltaSeconds = (timestamp - lastEtco2FrameTime) / 1000;
+  lastEtco2FrameTime = timestamp;
+
+  // Smoothly chase the actual RR
+  smoothedRr += (patient.rr - smoothedRr) * 0.025;
+
+  const breathsPerStrip = 4;
+  const stripWidth = 1000;
+
+  const pixelsPerSecond = stripWidth / (breathsPerStrip * (60 / smoothedRr));
+
+  etco2Phase += pixelsPerSecond * deltaSeconds;
+
+  if (etco2Phase >= stripWidth) {
+    etco2Phase -= stripWidth;
+  }
+
+  etco2Group.setAttribute("transform", `translate(${-etco2Phase} 0)`);
+
+  requestAnimationFrame(animateEtco2Wave);
+}
+
+let ecgGeneratedBeats = [];
+let ecgLastFrameTime = null;
+let ecgTimeSinceLastBeat = 0;
+let ecgSeeded = false;
+
+// This is the screen/paper speed.
+// Higher = faster leftward movement.
+// Lower = slower movement with more complexes visible for the same HR.
+const ecgPaperSpeed = 180;
+
+function seedGeneratedEcgBeats() {
+  ecgGeneratedBeats = [];
+
+  const secondsPerBeat = 60 / patient.hr;
+  const spacing = ecgPaperSpeed * secondsPerBeat;
+
+  // Fill the screen with beats based on current HR
+  for (let x = 1000; x > -160; x -= spacing) {
+   ecgGeneratedBeats.push({
+  x,
+  scale: getEcgScaleForHr(patient.hr),
+  artScale: getArtScaleForHr(patient.hr),
+  icpScale: getIcpScaleForHr(patient.hr),
+  spo2Scale: getSpo2ScaleForHr(patient.hr)
+  
+});
+  }
+
+  ecgTimeSinceLastBeat = 0;
+  ecgSeeded = true;
+}
+function getArtScaleForHr(hr) {
+  const secondsPerBeat = 60 / hr;
+  const beatSpacing = ecgPaperSpeed * secondsPerBeat;
+
+  // ART is wider than ECG, so it needs stronger compression at high HR
+  return Math.min(1, Math.max(0.32, beatSpacing / 210));
+}
+function getIcpScaleForHr(hr) {
+  const secondsPerBeat = 60 / hr;
+  const beatSpacing = ecgPaperSpeed * secondsPerBeat;
+
+  // ICP is fairly broad like ART, so compress at high HR
+  return Math.min(1, Math.max(0.35, beatSpacing / 210));
+}
+function getSpo2ScaleForHr(hr) {
+  const secondsPerBeat = 60 / hr;
+  const beatSpacing = ecgPaperSpeed * secondsPerBeat;
+
+  // Pleth is broad like ART, so compress at high HR
+  return Math.min(1, Math.max(0.35, beatSpacing / 220));
+}
+function animateGeneratedEcg(timestamp) {
+  const ecgPath = document.getElementById("ecgGeneratedPath");
+
+  if (!ecgPath) {
+    requestAnimationFrame(animateGeneratedEcg);
+    return;
+  }
+
+  if (!ecgSeeded) {
+    seedGeneratedEcgBeats();
+  }
+
+  if (ecgLastFrameTime === null) {
+    ecgLastFrameTime = timestamp;
+  }
+
+  const deltaSeconds = (timestamp - ecgLastFrameTime) / 1000;
+  ecgLastFrameTime = timestamp;
+  
+  const secondsPerBeat = 60 / patient.hr;
+
+  ecgTimeSinceLastBeat += deltaSeconds;
+
+  // Add new complexes based on HR timing
+  while (ecgTimeSinceLastBeat >= secondsPerBeat) {
+    ecgGeneratedBeats.push({
+  x: 1040,
+  scale: getEcgScaleForHr(patient.hr),
+  artScale: getArtScaleForHr(patient.hr),
+  icpScale: getIcpScaleForHr(patient.hr),
+  spo2Scale: getSpo2ScaleForHr(patient.hr)
+});
+    ecgTimeSinceLastBeat -= secondsPerBeat;
+  }
+
+  // Move all complexes left
+  ecgGeneratedBeats.forEach((beat) => {
+    beat.x -= ecgPaperSpeed * deltaSeconds;
+  });
+
+  // Remove complexes once fully off-screen
+  ecgGeneratedBeats = ecgGeneratedBeats.filter((beat) => beat.x > -180);
+
+  ecgPath.setAttribute("d", buildGeneratedEcgPath(ecgGeneratedBeats));
+
+ 
+  const artPath = document.getElementById("artGeneratedPath");
+if (artPath) {
+  if (patient.showArtWave) {
+    artPath.setAttribute("d", buildGeneratedArtPath(ecgGeneratedBeats));
+  } else {
+    artPath.setAttribute("d", "");
+  }
+}
+const icpPath = document.getElementById("icpGeneratedPath");
+
+if (icpPath) {
+  if (patient.showIcpWave) {
+    icpPath.setAttribute("d", buildGeneratedIcpPath(ecgGeneratedBeats));
+  } else {
+    icpPath.setAttribute("d", "");
+  }
+}
+const spo2Path = document.getElementById("spo2GeneratedPath");
+if (spo2Path) {
+  spo2Path.setAttribute("d", buildGeneratedSpo2Path(ecgGeneratedBeats));
+}
+requestAnimationFrame(animateGeneratedEcg);
+}
+function getEcgScaleForHr(hr) {
+  const secondsPerBeat = 60 / hr;
+  const beatSpacing = ecgPaperSpeed * secondsPerBeat;
+
+  // Pinch the complex when beats are closer together
+  return Math.min(1, Math.max(0.55, beatSpacing / 140));
+}
+
+function buildGeneratedEcgPath(beats) {
+  const sortedBeats = [...beats].sort((a, b) => a.x - b.x);
+
+  function ox(value, scale) {
+    return value * scale;
+  }
+
+  let d = "M 0 66 ";
+
+  sortedBeats.forEach((beat) => {
+    const x = beat.x;
+    const scale = beat.scale ?? 1;
+
+    d += `
+      L ${x + ox(-42, scale)} 66
+      L ${x + ox(-32, scale)} 63
+      L ${x + ox(-24, scale)} 65
+      L ${x + ox(-16, scale)} 66
+
+      L ${x + ox(-5, scale)} 73
+      L ${x} 28
+      L ${x + ox(5, scale)} 72
+      L ${x + ox(16, scale)} 66
+
+      L ${x + ox(28, scale)} 66
+      L ${x + ox(40, scale)} 63
+      L ${x + ox(50, scale)} 54
+      L ${x + ox(60, scale)} 52
+      L ${x + ox(70, scale)} 57
+      L ${x + ox(80, scale)} 64
+      L ${x + ox(92, scale)} 66
+    `;
+  });
+
+  d += "L 1000 66";
+  return d;
+}
+
+function buildGeneratedArtPath(beats) {
+  const sortedBeats = [...beats].sort((a, b) => a.x - b.x);
+
+  let d = "M 0 74 ";
+  let currentX = 0;
+
+  sortedBeats.forEach((beat) => {
+    const x = beat.x + 38; // keeps the ART delay after ECG
+    const scale = beat.artScale ?? 1;
+
+    function ox(value) {
+      return value * scale;
+    }
+
+    const startX = x + ox(-44);
+    const endX = x + ox(108);
+
+    if (startX > currentX) {
+      const gap = startX - currentX;
+
+      d += `
+        C ${currentX + gap * 0.20} 74,
+          ${currentX + gap * 0.45} 77,
+          ${currentX + gap * 0.70} 76
+        C ${currentX + gap * 0.85} 75,
+          ${startX - 4} 74,
+          ${startX} 74
+      `;
+    }
+
+    d += `
+  C ${x + ox(-40)} 74, ${x + ox(-34)} 72, ${x + ox(-28)} 58
+  C ${x + ox(-22)} 38, ${x + ox(-12)} 24, ${x + ox(0)} 24
+
+  C ${x + ox(8)} 34, ${x + ox(16)} 50, ${x + ox(28)} 61
+  C ${x + ox(38)} 68, ${x + ox(46)} 65, ${x + ox(50)} 58
+
+  C ${x + ox(54)} 52, ${x + ox(58)} 56, ${x + ox(64)} 61
+  C ${x + ox(74)} 68, ${x + ox(88)} 72, ${endX} 74
+`;
+
+    currentX = endX;
+  });
+
+  d += "L 1000 74";
+  return d;
+}
+function buildGeneratedIcpPath(beats) {
+  const sortedBeats = [...beats].sort((a, b) => a.x - b.x);
+
+  let d = "M 0 74 ";
+  let currentX = 0;
+
+  sortedBeats.forEach((beat) => {
+    const x = beat.x + 38; // same pulse timing as ART
+    const scale = beat.icpScale ?? 1;
+
+    function ox(value) {
+      return value * scale;
+    }
+
+    const startX = x + ox(-58);
+    const endX = x + ox(150);
+
+    if (startX > currentX) {
+      const gap = startX - currentX;
+
+      d += `
+        C ${currentX + gap * 0.30} 75,
+          ${currentX + gap * 0.70} 75,
+          ${startX} 74
+      `;
+    }
+
+ d += `
+  C ${x + ox(-50)} 74, ${x + ox(-42)} 72, ${x + ox(-34)} 66
+  C ${x + ox(-26)} 56, ${x + ox(-16)} 36, ${x + ox(-4)} 24
+
+  C ${x + ox(2)} 22, ${x + ox(6)} 28, ${x + ox(10)} 42
+  C ${x + ox(14)} 54, ${x + ox(18)} 58, ${x + ox(22)} 52
+
+  C ${x + ox(26)} 46, ${x + ox(30)} 44, ${x + ox(34)} 50
+  C ${x + ox(38)} 56, ${x + ox(42)} 58, ${x + ox(46)} 54
+
+  C ${x + ox(50)} 50, ${x + ox(54)} 50, ${x + ox(58)} 55
+  C ${x + ox(66)} 64, ${x + ox(82)} 72, ${endX} 74
+`;
+    currentX = endX;
+  });
+
+  d += "L 1000 74";
+  return d;
+}
+function buildGeneratedSpo2Path(beats) {
+  const sortedBeats = [...beats].sort((a, b) => a.x - b.x);
+
+  let d = "M 0 74 ";
+  let currentX = 0;
+
+  sortedBeats.forEach((beat) => {
+    const x = beat.x + 48; // pulse delay after ECG R wave
+    const scale = beat.spo2Scale ?? 1;
+
+    function ox(value) {
+      return value * scale;
+    }
+
+    const startX = x + ox(-52);
+    const endX = x + ox(132);
+
+    if (startX > currentX) {
+      d += `L ${startX} 74 `;
+    }
+
+    d += `
+  C ${x + ox(-40)} 74, ${x + ox(-34)} 72, ${x + ox(-28)} 58
+  C ${x + ox(-22)} 40, ${x + ox(-12)} 26, ${x + ox(0)} 26
+
+  C ${x + ox(8)} 34, ${x + ox(16)} 48, ${x + ox(28)} 58
+  C ${x + ox(38)} 64, ${x + ox(46)} 61, ${x + ox(50)} 55
+
+  C ${x + ox(54)} 51, ${x + ox(58)} 55, ${x + ox(64)} 59
+  C ${x + ox(74)} 66, ${x + ox(88)} 71, ${endX} 74
+`;
+
+    currentX = endX;
+  });
+
+  d += "L 1000 74";
+  return d;
+}
+let etco2GeneratedBreaths = [];
+let etco2LastFrameTime = null;
+let etco2TimeSinceLastBreath = 0;
+let etco2Seeded = false;
+
+// Fixed screen speed for the respiratory trace.
+// RR changes spacing, not scroll speed.
+const etco2PaperSpeed = 80;
+
+function getEtco2ScaleForRr(rr) {
+  if (rr <= 0) return 1;
+
+  const secondsPerBreath = 60 / rr;
+  const breathSpacing = etco2PaperSpeed * secondsPerBreath;
+
+  // Compress more at high RR so breaths do not overlap
+  return Math.min(1, Math.max(0.35, breathSpacing / 260));
+}
+
+function getEtco2PlateauY(etco2Value) {
+  // Higher EtCO2 gives a taller waveform.
+  // SVG y is inverted, so lower y = taller wave.
+  return Math.max(24, Math.min(58, 74 - etco2Value * 9));
+}
+
+function seedGeneratedEtco2Breaths() {
+  etco2GeneratedBreaths = [];
+
+  if (patient.rr <= 0) {
+    etco2Seeded = true;
+    return;
+  }
+
+  const secondsPerBreath = 60 / patient.rr;
+  const spacing = etco2PaperSpeed * secondsPerBreath;
+
+  for (let x = 1000; x > -260; x -= spacing) {
+    etco2GeneratedBreaths.push({
+      x,
+      scale: getEtco2ScaleForRr(patient.rr),
+      plateauY: getEtco2PlateauY(patient.etco2)
+    });
+  }
+
+  etco2TimeSinceLastBreath = 0;
+  etco2Seeded = true;
+}
+
+function animateGeneratedEtco2(timestamp) {
+  const etco2Path = document.getElementById("etco2GeneratedPath");
+
+  if (!etco2Path) {
+    requestAnimationFrame(animateGeneratedEtco2);
+    return;
+  }
+
+  if (!etco2Seeded) {
+    seedGeneratedEtco2Breaths();
+  }
+
+  if (etco2LastFrameTime === null) {
+    etco2LastFrameTime = timestamp;
+  }
+
+  const deltaSeconds = (timestamp - etco2LastFrameTime) / 1000;
+  etco2LastFrameTime = timestamp;
+
+  if (patient.rr > 0) {
+    const secondsPerBreath = 60 / patient.rr;
+
+    etco2TimeSinceLastBreath += deltaSeconds;
+
+    while (etco2TimeSinceLastBreath >= secondsPerBreath) {
+      etco2GeneratedBreaths.push({
+        x: 1060,
+        scale: getEtco2ScaleForRr(patient.rr),
+        plateauY: getEtco2PlateauY(patient.etco2)
+      });
+
+      etco2TimeSinceLastBreath -= secondsPerBreath;
+    }
+  }
+
+  etco2GeneratedBreaths.forEach((breath) => {
+    breath.x -= etco2PaperSpeed * deltaSeconds;
+  });
+
+  etco2GeneratedBreaths = etco2GeneratedBreaths.filter((breath) => breath.x > -260);
+
+  const etco2LineD = buildGeneratedEtco2Path(etco2GeneratedBreaths);
+const etco2FillD = buildGeneratedEtco2FillPath(etco2GeneratedBreaths);
+
+if (patient.showEtco2Wave) {
+  etco2Path.setAttribute("d", etco2LineD);
+} else {
+  etco2Path.setAttribute("d", "");
+}
+
+const etco2FillPath = document.getElementById("etco2FillPath");
+
+if (etco2FillPath) {
+  if (patient.showEtco2Wave) {
+    etco2FillPath.setAttribute("d", etco2FillD);
+  } else {
+    etco2FillPath.setAttribute("d", "");
+  }
+}
+
+  requestAnimationFrame(animateGeneratedEtco2);
+}
+
+function buildGeneratedEtco2Path(breaths) {
+  const sortedBreaths = [...breaths].sort((a, b) => a.x - b.x);
+
+  let d = "M 0 74 ";
+  let currentX = 0;
+
+  sortedBreaths.forEach((breath) => {
+    const x = breath.x;
+    const scale = breath.scale ?? 1;
+    const plateauY = breath.plateauY ?? 31;
+
+    function ox(value) {
+      return value * scale;
+    }
+
+    const startX = x + ox(-70);
+    const endX = x + ox(170);
+
+    if (startX > currentX) {
+      d += `L ${startX} 74 `;
+    }
+
+    d += `
+      C ${x + ox(-60)} 74, ${x + ox(-50)} 74, ${x + ox(-42)} 70
+      C ${x + ox(-34)} 62, ${x + ox(-26)} 44, ${x + ox(-14)} ${plateauY + 4}
+
+      C ${x + ox(-4)} ${plateauY}, ${x + ox(20)} ${plateauY}, ${x + ox(50)} ${plateauY + 1}
+      C ${x + ox(68)} ${plateauY + 1}, ${x + ox(82)} ${plateauY + 4}, ${x + ox(90)} 48
+
+      C ${x + ox(98)} 60, ${x + ox(104)} 70, ${x + ox(112)} 74
+      L ${endX} 74
+    `;
+
+    currentX = endX;
+  });
+
+  d += "L 1000 74";
+  return d;
+}
+function buildGeneratedEtco2FillPath(breaths) {
+  const linePath = buildGeneratedEtco2Path(breaths);
+
+  // Close the EtCO2 trace down to the baseline so it can be filled.
+  return `${linePath} L 1000 74 L 0 74 Z`;
+}
+function updateMonitorPopup() {
+  const popup = document.getElementById("monitorPopup");
+  const popupText = document.getElementById("monitorPopupText");
+
+  if (!popup || !popupText) return;
+
+  if (patient.showMonitorMessage) {
+    popupText.textContent = patient.monitorMessage || "END OF SIM";
+    popup.classList.remove("hidden");
+  } else {
+    popup.classList.add("hidden");
+  }
+}
+    function updateMonitor() {
+      const map = calculateMAP(patient.systolic, patient.diastolic);
+      const cpp = calculateCPP(map, patient.icp);
+      document.getElementById("icpWaveRow").style.display =
+       patient.showIcpWave ? "flex" : "none";
+
+       document.getElementById("icpTile").style.display =
+        patient.showIcpWave ? "flex" : "none";
+        document.getElementById("artWaveRow").style.display =
+       patient.showArtWave ? "flex" : "none";
+
+       document.getElementById("etco2WaveRow").style.display =
+       patient.showEtco2Wave ? "flex" : "none";
+
+       document.getElementById("etco2Tile").style.display =
+       patient.showEtco2Wave ? "flex" : "none";
+
+       document.getElementById("bpTile").style.display =
+       patient.showArtWave ? "flex" : "none";
+      document.getElementById("hr").textContent = patient.hr;
+      document.getElementById("spo2").textContent = patient.spo2;
+      document.getElementById("bp").textContent = `${patient.systolic}/${patient.diastolic}`;
+      document.getElementById("map").textContent = map;
+      document.getElementById("icp").textContent = patient.icp;
+      document.getElementById("cpp").textContent = cpp;
+      document.getElementById("rr").textContent = patient.rr;
+      document.getElementById("etco2").textContent = patient.etco2.toFixed(1);
+      document.getElementById("scenario").textContent = `Scenario: ${patient.scenario}`;
+
+      applyWarningColours(map, cpp);
+      updateMonitorPopup();
+      
+    }
+function updateAlarmBands(redMessages, yellowMessages) {
+  const redAlarmBand = document.getElementById("redAlarmBand");
+  const yellowAlarmBand = document.getElementById("yellowAlarmBand");
+
+  if (redMessages.length > 0) {
+    redAlarmBand.className = "alarm-band red-alarm";
+    redAlarmBand.textContent = redMessages.join(" / ");
+  } else {
+    redAlarmBand.className = "alarm-band hidden";
+    redAlarmBand.textContent = "";
+  }
+
+  if (yellowMessages.length > 0) {
+    yellowAlarmBand.className = "alarm-band yellow-alarm";
+    yellowAlarmBand.textContent = yellowMessages.join(" / ");
+  } else {
+    yellowAlarmBand.className = "alarm-band hidden";
+    yellowAlarmBand.textContent = "";
+  }
+
+}
+    // ------------------------------
+    // Simple colour warnings
+    // ------------------------------
+
+   // ------------------------------
+// Alarm sound handling
+// ------------------------------
+
+let alarmLoopTimeout = null;
+let activeAlarmLevel = "none";
+let alarmPlayToken = 0;
+
+function setAlarmSound(alarmLevel) {
+  // alarmLevel should be: "none", "yellow", or "red"
+
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+
+  if (alarmLevel === "none") {
+    activeAlarmLevel = "none";
+    alarmPlayToken++;
+    stopAllAlarmSounds();
+    return;
+  }
+
+  const currentSound =
+    alarmLevel === "red" ? redAlarmSound : yellowAlarmSound;
+
+  const otherSound =
+    alarmLevel === "red" ? yellowAlarmSound : redAlarmSound;
+
+  // Always stop the non-priority sound
+  otherSound.onended = null;
+  otherSound.pause();
+  otherSound.currentTime = 0;
+
+  // If the same alarm level is already active, leave the timing alone.
+// This prevents yellow alarms restarting early when values change.
+if (alarmLevel === activeAlarmLevel) {
+  return;
+}
+
+// Otherwise start/restart only when the alarm level changes
+activeAlarmLevel = alarmLevel;
+alarmPlayToken++;
+
+  if (alarmLoopTimeout !== null) {
+    clearTimeout(alarmLoopTimeout);
+    alarmLoopTimeout = null;
+  }
+
+  currentSound.onended = null;
+  currentSound.pause();
+  currentSound.currentTime = 0;
+
+  playCurrentAlarmWithGap(alarmPlayToken);
+}
+
+function stopAllAlarmSounds() {
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+
+  if (alarmLoopTimeout !== null) {
+    clearTimeout(alarmLoopTimeout);
+    alarmLoopTimeout = null;
+  }
+
+  yellowAlarmSound.onended = null;
+  redAlarmSound.onended = null;
+
+  yellowAlarmSound.pause();
+  yellowAlarmSound.currentTime = 0;
+
+  redAlarmSound.pause();
+  redAlarmSound.currentTime = 0;
+}
+
+function playCurrentAlarmWithGap(token) {
+  if (token !== alarmPlayToken) return;
+  if (activeAlarmLevel === "none") return;
+
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+
+  const soundToPlay =
+    activeAlarmLevel === "red" ? redAlarmSound : yellowAlarmSound;
+
+  const soundToStop =
+    activeAlarmLevel === "red" ? yellowAlarmSound : redAlarmSound;
+
+  soundToStop.onended = null;
+  soundToStop.pause();
+  soundToStop.currentTime = 0;
+
+  soundToPlay.currentTime = 0;
+
+  soundToPlay.play().catch(() => {
+    // Browser may block sound until user has interacted with the page
+  });
+
+  soundToPlay.onended = () => {
+    if (token !== alarmPlayToken) return;
+    if (activeAlarmLevel === "none") return;
+
+    const gap = activeAlarmLevel === "red" ? 50 : 1500;
+
+    alarmLoopTimeout = setTimeout(() => {
+      playCurrentAlarmWithGap(token);
+    }, gap);
+  };
+}
+
+function enableAlarmSound() {
+  const yellowAlarmSound = document.getElementById("yellowAlarmSound");
+  const redAlarmSound = document.getElementById("redAlarmSound");
+  const enableButton = document.getElementById("enableSoundButton");
+
+  yellowAlarmSound.play().then(() => {
+    yellowAlarmSound.pause();
+    yellowAlarmSound.currentTime = 0;
+  }).catch(() => {});
+
+  redAlarmSound.play().then(() => {
+    redAlarmSound.pause();
+    redAlarmSound.currentTime = 0;
+  }).catch(() => {});
+
+  enableButton.classList.add("hidden");
+}
+// ------------------------------
+// Alarm visual logic
+// ------------------------------
+function applyWarningColours(map, cpp) {
+  const hrElement = document.getElementById("hr");
+  const spo2Element = document.getElementById("spo2");
+  const icpElement = document.getElementById("icp");
+  const cppElement = document.getElementById("cpp");
+  const mapElement = document.getElementById("map");
+
+  // Reset normal colours and remove alarm flashing
+  hrElement.className = "value green";
+  spo2Element.className = "value blue";
+  icpElement.className = "value yellow compact-value";
+  cppElement.className = "value yellow compact-value";
+  mapElement.className = "value compact-value map-value";
+
+  let redMessages = [];
+  let yellowMessages = [];
+
+  // ------------------------------
+  // RED alarms
+  // ------------------------------
+
+  if (patient.hr < 50 || patient.hr >= 130) {
+    hrElement.classList.add("flash-alarm");
+    redMessages.push("HR");
+  }
+
+  if (patient.spo2 < 92) {
+    spo2Element.classList.add("flash-alarm");
+    redMessages.push("SpO₂");
+  }
+
+  if (map < 65) {
+    mapElement.classList.add("flash-alarm");
+    redMessages.push("MAP");
+  }
+
+  if (patient.icp > 35) {
+    icpElement.classList.add("flash-alarm");
+    redMessages.push("ICP");
+  }
+
+  if (cpp < 50) {
+    cppElement.classList.add("flash-alarm");
+    redMessages.push("CPP");
+  }
+
+  // ------------------------------
+  // YELLOW alarms
+  // These still flash visually even if red alarm is active
+  // ------------------------------
+
+  if (patient.hr >= 120 && patient.hr < 130) {
+    hrElement.classList.add("flash-alarm");
+    yellowMessages.push("HR");
+  }
+
+  if (patient.icp > 20 && patient.icp <= 35) {
+    icpElement.classList.add("flash-alarm");
+    yellowMessages.push("ICP");
+  }
+
+  if (cpp <= 65 && cpp >= 50) {
+    cppElement.classList.add("flash-alarm");
+    yellowMessages.push("CPP");
+  }
+
+  // ------------------------------
+  // Sound priority
+  // Red sound overrides yellow sound
+  // ------------------------------
+
+  let alarmLevel = "none";
+
+  if (redMessages.length > 0) {
+    alarmLevel = "red";
+  } else if (yellowMessages.length > 0) {
+    alarmLevel = "yellow";
+  }
+
+  setAlarmSound(alarmLevel);
+  updateAlarmBands(redMessages, yellowMessages);
+}
+
+    // ------------------------------
+    // Clock
+    // ------------------------------
+
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+
+      document.getElementById("clock").textContent = timeString;
+    }
+
+    // ------------------------------
+    // Start app
+    // ------------------------------
+// ------------------------------
+// Basic test controls
+// ------------------------------
+
+const baselinePatient = {
+  hr: 86,
+  spo2: 98,
+  systolic: 126,
+  diastolic: 74,
+  icp: 14,
+  rr: 16,
+  etco2: 4.8,
+  scenario: "Baseline"
+};
+
+function changeValue(parameter, amount) {
+  patient[parameter] += amount;
+
+  // Basic safety limits to keep values realistic
+  patient.hr = clamp(patient.hr, 30, 220);
+  patient.spo2 = clamp(patient.spo2, 50, 100);
+  patient.systolic = clamp(patient.systolic, 50, 240);
+  patient.diastolic = clamp(patient.diastolic, 20, 140);
+  patient.icp = clamp(patient.icp, 0, 80);
+  patient.rr = clamp(patient.rr, 0, 50);
+  patient.etco2 = clamp(patient.etco2, 1.0, 12.0);
+
+  // Keep systolic above diastolic
+  if (patient.systolic <= patient.diastolic) {
+    patient.systolic = patient.diastolic + 5;
+  }
+
+  patient.scenario = "Manual test";
+  updateMonitor();
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function resetPatient() {
+  clearGradualChanges();resetSimTimer();
+  simState.sedationGiven = false;
+  patient.hr = baselinePatient.hr;
+  patient.spo2 = baselinePatient.spo2;
+  patient.systolic = baselinePatient.systolic;
+  patient.diastolic = baselinePatient.diastolic;
+  patient.icp = baselinePatient.icp;
+  patient.rr = baselinePatient.rr;
+  patient.etco2 = baselinePatient.etco2;
+  patient.scenario = baselinePatient.scenario;
+
+  updateMonitor();
+}
+function startSimTimer() {
+  stopSimTimer();
+
+  simState.timerSeconds = 0;
+  updateSimTimerDisplay();
+
+  simState.timerInterval = setInterval(() => {
+    simState.timerSeconds++;
+    updateSimTimerDisplay();
+  }, 1000);
+}
+
+function stopSimTimer() {
+  if (simState.timerInterval !== null) {
+    clearInterval(simState.timerInterval);
+    simState.timerInterval = null;
+  }
+}
+
+function resetSimTimer() {
+  stopSimTimer();
+  simState.timerSeconds = 0;
+  updateSimTimerDisplay();
+}
+
+function updateSimTimerDisplay() {
+  const minutes = Math.floor(simState.timerSeconds / 60);
+  const seconds = simState.timerSeconds % 60;
+
+  const timeText =
+    String(minutes).padStart(2, "0") +
+    ":" +
+    String(seconds).padStart(2, "0");
+
+  document.getElementById("simTimer").textContent = `Sim timer: ${timeText}`;
+}
+// ------------------------------
+// Scenario buttons
+// ------------------------------
+let activeIntervals = [];
+function clearGradualChanges() {
+  activeIntervals.forEach(interval => clearInterval(interval));
+  activeIntervals = [];
+}
+function gradualChange(parameter, targetValue, stepAmount, delayMs) {
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    if (patient[parameter] < targetValue) {
+      patient[parameter] = Math.min(patient[parameter] + stepAmount, targetValue);
+    } else {
+      patient[parameter] = Math.max(patient[parameter] - stepAmount, targetValue);
+    }
+
+    updateMonitor();
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+function gradualIntChangeOverTime(parameter, targetValue, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.abs(difference);
+
+  if (steps === 0) return;
+
+  const stepDirection = difference > 0 ? 1 : -1;
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    patient[parameter] += stepDirection;
+    updateMonitor();
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+
+function gradualDecimalChangeOverTime(parameter, targetValue, stepAmount, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.ceil(Math.abs(difference) / stepAmount);
+
+  if (steps === 0) return;
+
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    if (Math.abs(patient[parameter] - targetValue) < stepAmount) {
+      patient[parameter] = targetValue;
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      updateMonitor();
+      return;
+    }
+
+    if (patient[parameter] < targetValue) {
+      patient[parameter] += stepAmount;
+    } else {
+      patient[parameter] -= stepAmount;
+    }
+
+    patient[parameter] = Math.round(patient[parameter] * 10) / 10;
+    updateMonitor();
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+function scenarioRaisedICP() {
+  patient.icp = 30;
+  patient.hr = 58;
+  patient.systolic = 158;
+  patient.diastolic = 86;
+  patient.rr = 12;
+  patient.etco2 = 5.8;
+  patient.scenario = "Raised ICP";
+
+  updateMonitor();
+}
+
+function scenarioHeadUp() {
+  patient.scenario = "Head up 30° / neutral neck";
+  updateMonitor();
+
+  const targetICP = clamp(patient.icp - 8, 0, 80);
+
+  gradualChange("icp", targetICP, 1, 3000);
+}
+
+function scenarioSedation() {
+  patient.hr = clamp(patient.hr - 18, 30, 220);
+  patient.systolic = clamp(patient.systolic - 22, 50, 240);
+  patient.diastolic = clamp(patient.diastolic - 10, 20, 140);
+  patient.icp = clamp(patient.icp - 8, 0, 80);
+  patient.rr = clamp(patient.rr - 0, 0, 50);
+  patient.etco2 = clamp(patient.etco2 + 0.4, 1.0, 12.0);
+  patient.scenario = "Sedation increased";
+
+  updateMonitor();
+}
+
+function scenarioNorad() {
+  patient.systolic = clamp(patient.systolic + 22, 50, 240);
+  patient.diastolic = clamp(patient.diastolic + 12, 20, 140);
+  patient.hr = clamp(patient.hr - 5, 30, 220);
+  patient.scenario = "Norad increased";
+
+  updateMonitor();
+}
+// ------------------------------
+// Autoregulation Sim Logic
+// ------------------------------
+
+function simStartKinked() {
+  clearGradualChanges();
+  simState.sedationGiven = false;
+  startSimTimer();
+
+  // Start from baseline while learners are entering / setting up
+  patient.hr = 86;
+  patient.spo2 = 98;
+  patient.systolic = 126;
+  patient.diastolic = 74;
+  patient.icp = 14;
+  patient.rr = 16;
+  patient.etco2 = 4.8;
+  patient.scenario = "Start: deterioration over 2 minutes";
+
+  updateMonitor();
+
+  const twoMinutes = 120000;
+
+  // Gradually move into the slumped / neck kinked state
+  gradualIntChangeOverTime("hr", 88, twoMinutes);
+  gradualIntChangeOverTime("spo2", 97, twoMinutes);
+  gradualIntChangeOverTime("systolic", 135, twoMinutes);
+  gradualIntChangeOverTime("diastolic", 65, twoMinutes);
+  gradualIntChangeOverTime("icp", 26, twoMinutes);
+  gradualIntChangeOverTime("rr", 16, twoMinutes);
+  gradualDecimalChangeOverTime("etco2", 4.6, 0.1, twoMinutes);
+}
+
+function simBasicCare() {
+  clearGradualChanges();
+  patient.scenario = "Basic nursing care: head up / neutral neck";
+  updateMonitor();
+
+  // ICP improves gradually after positioning and reducing venous obstruction
+  gradualChange("icp", clamp(patient.icp - 10, 0, 80), 1, 2000);
+
+  // BP settles slightly as stimulation reduces
+  gradualChange("systolic", clamp(patient.systolic - 8, 50, 240), 2, 3000);
+  gradualChange("diastolic", clamp(patient.diastolic - 4, 20, 140), 1, 3000);
+}
+
+function simAgitatedRise() {
+  clearGradualChanges();
+  simState.sedationGiven = false;
+
+  patient.scenario = "Awake / agitated: ICP rising";
+  updateMonitor();
+
+  // Patient becomes more stimulated: BP rises, HR rises, ICP rises more prominently
+  gradualChange("hr", clamp(patient.hr + 12, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic + 22, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 10, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 16, 0, 80), 2, 2000);
+  gradualChange("etco2", clamp(patient.etco2 + 0.3, 1.0, 12.0), 0.1, 3000);
+}
+
+function simNoradEarly() {
+  clearGradualChanges();
+  patient.scenario = "Norad before sedation: ICP worsens";
+  updateMonitor();
+
+  // In this sim, BP augmentation before ICP/sedation control worsens ICP
+  gradualChange("systolic", clamp(patient.systolic + 25, 50, 240), 5, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 5, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 11, 0, 80), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+}
+
+function simSedationFirst() {
+  clearGradualChanges();
+  simState.sedationGiven = true;
+
+  patient.scenario = "Sedation increased: ICP improving";
+  updateMonitor();
+
+  // Sedation reduces agitation-driven ICP but may also drop BP
+  gradualChange("hr", clamp(patient.hr - 15, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic - 18, 50, 240), 3, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic - 8, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp - 14, 0, 80), 2, 2000);
+  gradualChange("rr", clamp(patient.rr - 0, 0, 50), 1, 3000);
+  gradualChange("etco2", clamp(patient.etco2 + 0.2, 1.0, 12.0), 0.1, 3000);
+}
+
+function simNoradAfterSedation() {
+  clearGradualChanges();
+  if (!simState.sedationGiven) {
+    simNoradEarly();
+    return;
+  }
+
+  patient.scenario = "Norad after sedation: CPP improving";
+  updateMonitor();
+
+  // After sedation/ICP control, BP augmentation improves CPP without worsening ICP
+  gradualChange("systolic", clamp(patient.systolic + 24, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 12, 20, 140), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+
+  // ICP remains stable or slightly improves
+  gradualChange("icp", clamp(patient.icp - 2, 0, 80), 1, 4000);
+}
+    updateMonitor();
+    updateClock();
+    updateSimTimerDisplay();
+
+    setInterval(updateClock, 1000);
+    requestAnimationFrame(animateCardiacWaves);
+    requestAnimationFrame(animateGeneratedEtco2);
+    requestAnimationFrame(animateGeneratedEcg);
+  </script>
+</body>
+</html>
