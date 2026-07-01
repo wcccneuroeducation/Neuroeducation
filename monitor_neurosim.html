@@ -6,6 +6,151 @@
   <title>ITU Monitor Sim</title>
 
   <style>
+
+    /* temp static values for testing */
+    .hr-trend {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 6px 8px;
+  color: #00ff66;
+}
+
+.trend-title {
+  font-size: 0.7rem;
+  text-align: center;
+  color: #aaa;
+  margin-bottom: 2px;
+}
+
+.hr-trend svg {
+  width: 100%;
+  height: 62px;
+}
+
+.hr-trend line {
+  stroke: #333;
+  stroke-width: 1;
+}
+
+.hr-trend polyline {
+  fill: none;
+  stroke: #00ff66;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bp-trend {
+  flex-direction: column;
+  padding: 4px 6px;
+}
+
+.bp-trend svg {
+  width: 100%;
+  height: 62px;
+}
+
+.bp-fill {
+  fill: rgba(255,0,0,0.18);
+}
+
+.bp-top,
+.bp-bottom {
+  fill: none;
+  stroke: #ff3333;
+  stroke-width: 2;
+}
+
+.bp-map {
+  fill: none;
+  stroke: #ff5555;
+  stroke-width: 2;
+  stroke-dasharray: 2 2;
+}
+
+.axis-line {
+  stroke: #333;
+  stroke-width: 1;
+}
+.grid-line {
+  stroke: #222;
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.icp-trend {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 6px 8px;
+  color: #ffd400;
+}
+
+.icp-trend {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 6px 8px;
+}
+
+.icp-trend svg {
+  width: 100%;
+  height: 62px;
+}
+
+.icp-fill {
+  fill: rgba(255, 212, 0, 0.12);
+}
+
+.icp-line {
+  fill: none;
+  stroke: #ffd400;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.spo2-trend {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 6px 8px;
+  color: #00ccff;
+}
+
+.spo2-trend svg {
+  width: 100%;
+  height: 62px;
+}
+
+.spo2-line {
+  fill: none;
+  stroke: #00ccff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.etco2-trend {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 6px 8px;
+  color: white;
+}
+
+.etco2-trend svg {
+  width: 100%;
+  height: 62px;
+}
+
+.etco2-line {
+  fill: none;
+  stroke: white;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* end temp static values for testing */
     body {
       margin: 0;
       background: #111;
@@ -99,10 +244,22 @@
     .vitals {
   grid-column: 1 / 4;
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 2fr 1fr 0.8fr;
   grid-template-rows: repeat(5, 1fr);
   gap: 10px;
   align-content: center;
+}
+.trend-tile {
+  border: 2px solid #333;
+  border-radius: 12px;
+  background: #020202;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: bold;
 }
     .tile {
   border: 2px solid #333;
@@ -516,6 +673,33 @@
   </div>
 </div>
 
+<div id="hrTrend" class="trend-tile hr-trend">
+  <div class="trend-title">TREND Data</div>
+
+  <svg viewBox="0 0 200 80" preserveAspectRatio="none">
+    <line x1="18" y1="25" x2="190" y2="25" class="grid-line" />
+<line x1="18" y1="45" x2="190" y2="45" class="grid-line" />
+
+<line x1="75" y1="10" x2="75" y2="65" class="grid-line" />
+<line x1="135" y1="10" x2="135" y2="65" class="grid-line" />
+    <polyline
+  points="
+  0,45
+  20,43
+  40,38
+  60,40
+  80,36
+  100,39
+  120,44
+  140,41
+  160,37
+  180,40
+  200,38"
+/>
+  </svg>
+</div>
+
+
 <div class="tile">
   <div class="label">HR</div>
   <div>
@@ -532,6 +716,83 @@
       <path id="artGeneratedPath"></path>
     </svg>
   </div>
+</div>
+<div id="artTrend" class="trend-tile bp-trend">
+
+  <div class="trend-title">TREND data</div>
+
+  <svg viewBox="0 0 200 80" preserveAspectRatio="none">
+    <!-- horizontal grid -->
+<line x1="18" y1="20" x2="190" y2="20" class="grid-line" />
+<line x1="18" y1="35" x2="190" y2="35" class="grid-line" />
+<line x1="18" y1="50" x2="190" y2="50" class="grid-line" />
+
+<!-- vertical grid -->
+<line x1="60" y1="10" x2="60" y2="65" class="grid-line" />
+<line x1="120" y1="10" x2="120" y2="65" class="grid-line" />
+<line x1="180" y1="10" x2="180" y2="65" class="grid-line" />
+
+
+    <!-- fill area -->
+    <path
+      class="bp-fill"
+      d="
+      M0,25
+      L20,18
+      L40,22
+      L60,28
+      L80,20
+      L100,24
+      L120,30
+      L140,22
+      L160,18
+      L180,24
+      L200,28
+
+      L200,55
+      L180,50
+      L160,46
+      L140,52
+      L120,58
+      L100,54
+      L80,48
+      L60,52
+      L40,46
+      L20,50
+      L0,55
+      Z
+      "
+    />
+
+    <!-- systolic -->
+    <polyline
+      class="bp-top"
+      points="
+      0,25 20,18 40,22 60,28 80,20
+      100,24 120,30 140,22 160,18
+      180,24 200,28"
+    />
+
+    <!-- MAP -->
+    <polyline
+      class="bp-map"
+      points="
+      0,40 20,34 40,36 60,42 80,37
+      100,39 120,44 140,38 160,35
+      180,40 200,43"
+    />
+
+    <!-- diastolic -->
+    <polyline
+      class="bp-bottom"
+      points="
+      0,55 20,50 40,46 60,52 80,48
+      100,54 120,58 140,52 160,46
+      180,50 200,55"
+    />
+
+  </svg>
+
 </div>
 
 <div id="bpTile" class="tile compact-tile">
@@ -561,6 +822,52 @@
   </div>
 </div>
 
+<div id="icpTrend" class="trend-tile icp-trend">
+  <div class="trend-title">TREND Data</div>
+
+  <svg viewBox="0 0 200 80" preserveAspectRatio="none">
+    <line x1="18" y1="25" x2="190" y2="25" class="grid-line" />
+    <line x1="18" y1="45" x2="190" y2="45" class="grid-line" />
+    <line x1="75" y1="10" x2="75" y2="65" class="grid-line" />
+    <line x1="135" y1="10" x2="135" y2="65" class="grid-line" />
+
+    <path
+  class="icp-fill"
+  d="
+  M0,45
+  L20,43
+  L40,39
+  L60,42
+  L80,37
+  L100,40
+  L120,35
+  L140,38
+  L160,32
+  L180,34
+  L200,29
+  L200,65
+  L0,65
+  Z"
+/>
+
+<polyline
+  class="icp-line"
+  points="
+  0,45
+  20,43
+  40,39
+  60,42
+  80,37
+  100,40
+  120,35
+  140,38
+  160,32
+  180,34
+  200,29"
+/>
+  </svg>
+</div>
+
 <div id="icpTile" class="tile compact-tile">
   <div class="label">ICP / CPP</div>
 
@@ -586,7 +893,32 @@
     </svg>
   </div>
 </div>
+<div id="spo2Trend" class="trend-tile spo2-trend">
+  <div class="trend-title">TREND Data</div>
 
+  <svg viewBox="0 0 200 80" preserveAspectRatio="none">
+    <line x1="18" y1="25" x2="190" y2="25" class="grid-line" />
+    <line x1="18" y1="45" x2="190" y2="45" class="grid-line" />
+    <line x1="75" y1="10" x2="75" y2="65" class="grid-line" />
+    <line x1="135" y1="10" x2="135" y2="65" class="grid-line" />
+
+    <polyline
+      class="spo2-line"
+      points="
+      0,32
+      20,32
+      40,31
+      60,32
+      80,31
+      100,31
+      120,32
+      140,31
+      160,31
+      180,32
+      200,31"
+    />
+  </svg>
+</div>
 <div class="tile">
   <div class="label">SpO₂</div>
   <div>
@@ -605,7 +937,32 @@
     </svg>
   </div>
 </div>
+<div id="etco2Trend" class="trend-tile etco2-trend">
+  <div class="trend-title">TREND Data</div>
 
+  <svg viewBox="0 0 200 80" preserveAspectRatio="none">
+    <line x1="18" y1="25" x2="190" y2="25" class="grid-line" />
+    <line x1="18" y1="45" x2="190" y2="45" class="grid-line" />
+    <line x1="75" y1="10" x2="75" y2="65" class="grid-line" />
+    <line x1="135" y1="10" x2="135" y2="65" class="grid-line" />
+
+    <polyline
+      class="etco2-line"
+      points="
+      0,36
+      20,36
+      40,35
+      60,36
+      80,36
+      100,35
+      120,36
+      140,36
+      160,35
+      180,36
+      200,36"
+    />
+  </svg>
+</div>
 <div id="etco2Tile" class="tile compact-tile">
   <div class="label">RR / EtCO₂</div>
 
