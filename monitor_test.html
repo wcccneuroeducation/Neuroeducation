@@ -661,6 +661,7 @@ const roomRef = database.ref("simRooms/neuro1");
       icp: 14,
       rr: 16,
       etco2: 4.8,
+      showIcpWave: true,
       scenario: "Baseline",
       monitorMessage: "",
   showMonitorMessage: false
@@ -679,6 +680,7 @@ roomRef.on("value", (snapshot) => {
   patient.spo2 = data.spo2;
   patient.systolic = data.systolic;
   patient.diastolic = data.diastolic;
+  patient.showIcpWave = data.showIcpWave !== false;
   patient.icp = data.icp;
   patient.rr = data.rr;
   patient.etco2 = data.etco2;
@@ -887,8 +889,13 @@ if (artPath) {
   artPath.setAttribute("d", buildGeneratedArtPath(ecgGeneratedBeats));
 }
 const icpPath = document.getElementById("icpGeneratedPath");
+
 if (icpPath) {
-  icpPath.setAttribute("d", buildGeneratedIcpPath(ecgGeneratedBeats));
+  if (patient.showIcpWave) {
+    icpPath.setAttribute("d", buildGeneratedIcpPath(ecgGeneratedBeats));
+  } else {
+    icpPath.setAttribute("d", "");
+  }
 }
 const spo2Path = document.getElementById("spo2GeneratedPath");
 if (spo2Path) {
