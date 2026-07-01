@@ -179,7 +179,14 @@
     <button onclick="changeValue('rr', 1)">RR +1</button>
   </div>
 </div>
-
+<div class="control-card">
+  <div class="label">SpO₂</div>
+  <div class="value"><span id="spo2Value">--</span> %</div>
+  <div class="button-row">
+    <button onclick="changeValue('spo2', -1)">SpO₂ -1</button>
+    <button onclick="changeValue('spo2', 1)">SpO₂ +1</button>
+  </div>
+</div>
 <div class="control-card">
   <div class="label">EtCO₂</div>
   <div class="value"><span id="etco2Value">--</span> kPa</div>
@@ -284,6 +291,7 @@ function formatTimer(seconds) {
   document.getElementById("diaValue").textContent = patient.diastolic;
   document.getElementById("icpValue").textContent = patient.icp;
   document.getElementById("rrValue").textContent = patient.rr;
+  document.getElementById("spo2Value").textContent = patient.spo2;
   document.getElementById("etco2Value").textContent = Number(patient.etco2).toFixed(1);
   document.getElementById("scenarioValue").textContent = patient.scenario;
 
@@ -300,11 +308,12 @@ function formatTimer(seconds) {
 
       updatedPatient[parameter] += amount;
 
-updatedPatient.hr = clamp(updatedPatient.hr, 30, 220);
-updatedPatient.systolic = clamp(updatedPatient.systolic, 50, 240);
+updatedPatient.hr = clamp(updatedPatient.hr, 0, 220);
+updatedPatient.systolic = clamp(updatedPatient.systolic, 30, 240);
 updatedPatient.diastolic = clamp(updatedPatient.diastolic, 20, 140);
-updatedPatient.icp = clamp(updatedPatient.icp, 0, 80);
-updatedPatient.rr = clamp(updatedPatient.rr, 0, 50);
+updatedPatient.icp = clamp(updatedPatient.icp, -5, 80);
+updatedPatient.rr = clamp(updatedPatient.rr, 0, 60);
+updatedPatient.spo2 = clamp(updatedPatient.spo2, 50, 100);
 updatedPatient.etco2 = clamp(updatedPatient.etco2, 1.0, 12.0);
 updatedPatient.etco2 = Math.round(updatedPatient.etco2 * 10) / 10;
 
