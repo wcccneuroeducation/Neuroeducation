@@ -514,7 +514,7 @@
   </div>
 </div>
 
-<div class="wave-row">
+<div id="icpWaveRow" class="wave-row">
   <div class="wave-label">ICP</div>
 
   <div class="wave-trace icp-trace">
@@ -524,7 +524,7 @@
   </div>
 </div>
 
-<div class="tile compact-tile">
+<div id="icpTile" class="tile compact-tile">
   <div class="label">ICP / CPP</div>
 
   <div class="combined-values">
@@ -1243,7 +1243,11 @@ function updateMonitorPopup() {
     function updateMonitor() {
       const map = calculateMAP(patient.systolic, patient.diastolic);
       const cpp = calculateCPP(map, patient.icp);
+      document.getElementById("icpWaveRow").style.display =
+       patient.showIcpWave ? "flex" : "none";
 
+       document.getElementById("icpTile").style.display =
+        patient.showIcpWave ? "flex" : "none";
       document.getElementById("hr").textContent = patient.hr;
       document.getElementById("spo2").textContent = patient.spo2;
       document.getElementById("bp").textContent = `${patient.systolic}/${patient.diastolic}`;
