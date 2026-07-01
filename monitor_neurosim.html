@@ -16,7 +16,9 @@
   padding: 6px 8px;
   color: #00ff66;
 }
-
+#scenario {
+  display: none;
+}
 .trend-title {
   font-size: 0.7rem;
   text-align: center;
@@ -69,6 +71,15 @@
   stroke-dasharray: 2 2;
 }
 
+#bpTile .combined-values {
+  column-gap: 28px;
+}
+#bpTile .value-pair:last-child {
+  justify-content: flex-end;
+}
+#bpTile .map-value {
+  font-size: 2.4rem;
+}
 .axis-line {
   stroke: #333;
   stroke-width: 1;
@@ -378,7 +389,9 @@
 .map-value {
   color: #ff3333;
 }
-
+.map-pair {
+  justify-content: flex-start;
+}
 
 .value.compact-value {
   font-size: 2.8rem;
@@ -800,17 +813,16 @@
   <div class="label">BP / MAP</div>
 
   <div class="combined-values">
-    <div class="value-pair">
-      <span id="bp" class="value red compact-value">126/74</span>
-      <span class="value-pair-label">mmHg</span>
-    </div>
-
-    <div class="value-pair">
-      <span id="map" class="value compact-value map-value">91</span>
-      <span class="value-pair-label">MAP</span>
-      
-    </div>
+  <div class="value-pair">
+    <span id="bp" class="value red compact-value">120/70</span>
+    <span class="value-pair-label">mmHg</span>
   </div>
+
+  <div class="value-pair">
+    <span id="map" class="value compact-value map-value">87</span>
+    <span class="value-pair-label">MAP</span>
+  </div>
+</div>
 </div>
 
 <div id="icpWaveRow" class="wave-row">
