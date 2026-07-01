@@ -487,7 +487,7 @@
   </div>
 </div>
 
-<div class="wave-row">
+<div id="artWaveRow" class="wave-row">
   <div class="wave-label">ART</div>
 
   <div class="wave-trace art-trace">
@@ -497,7 +497,7 @@
   </div>
 </div>
 
-<div class="tile compact-tile">
+<div id="bpTile" class="tile compact-tile">
   <div class="label">BP / MAP</div>
 
   <div class="combined-values">
@@ -662,6 +662,7 @@ const roomRef = database.ref("simRooms/neuro1");
       rr: 16,
       etco2: 4.8,
       showIcpWave: true,
+      showArtWave: true,
       scenario: "Baseline",
       monitorMessage: "",
   showMonitorMessage: false
@@ -681,6 +682,7 @@ roomRef.on("value", (snapshot) => {
   patient.systolic = data.systolic;
   patient.diastolic = data.diastolic;
   patient.showIcpWave = data.showIcpWave !== false;
+  patient.showArtWave = data.showArtWave !== false;
   patient.icp = data.icp;
   patient.rr = data.rr;
   patient.etco2 = data.etco2;
@@ -886,7 +888,11 @@ function animateGeneratedEcg(timestamp) {
  
   const artPath = document.getElementById("artGeneratedPath");
 if (artPath) {
-  artPath.setAttribute("d", buildGeneratedArtPath(ecgGeneratedBeats));
+  if (patient.showArtWave) {
+    artPath.setAttribute("d", buildGeneratedArtPath(ecgGeneratedBeats));
+  } else {
+    artPath.setAttribute("d", "");
+  }
 }
 const icpPath = document.getElementById("icpGeneratedPath");
 
@@ -1248,6 +1254,11 @@ function updateMonitorPopup() {
 
        document.getElementById("icpTile").style.display =
         patient.showIcpWave ? "flex" : "none";
+        document.getElementById("artWaveRow").style.display =
+       patient.showArtWave ? "flex" : "none";
+
+       document.getElementById("bpTile").style.display =
+       patient.showArtWave ? "flex" : "none";
       document.getElementById("hr").textContent = patient.hr;
       document.getElementById("spo2").textContent = patient.spo2;
       document.getElementById("bp").textContent = `${patient.systolic}/${patient.diastolic}`;

@@ -199,9 +199,11 @@
 <div class="control-card">
   <div class="label">Wave Controls</div>
   <div class="button-row">
-    <button onclick="toggleWave('showIcpWave')">ICP Wave ON/OFF</button>
+    <button onclick="toggleWave('showIcpWave')">ICP</button>
+    <button onclick="toggleWave('showArtWave')">ART Line</button>
   </div>
 </div>
+
   </div>  
 
 <button class="reset" onclick="resetPatient()">Reset Baseline</button>
@@ -242,6 +244,7 @@
       rr: 16,
       etco2: 4.3,
       showIcpWave: true,
+      showArtWave: true,
       scenario: "Baseline",
       sedationGiven: false,
       timerSeconds: 0
@@ -256,6 +259,7 @@
       rr: 16,
       etco2: 4.3,
       showIcpWave: true,
+      showArtWave: true,
       scenario: "Baseline",
       sedationGiven: false,
       timerSeconds: 0
