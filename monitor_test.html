@@ -558,7 +558,7 @@
   </div>
 </div>
 
-<div class="wave-row">
+<div id="etco2WaveRow" class="wave-row">
   <div class="wave-label">EtCO₂</div>
 
   <div class="wave-trace etco2-trace">
@@ -569,7 +569,7 @@
   </div>
 </div>
 
-<div class="tile compact-tile">
+<div id="etco2Tile" class="tile compact-tile">
   <div class="label">RR / EtCO₂</div>
 
   <div class="combined-values">
@@ -663,6 +663,7 @@ const roomRef = database.ref("simRooms/neuro1");
       etco2: 4.8,
       showIcpWave: true,
       showArtWave: true,
+      showEtco2Wave: true,
       scenario: "Baseline",
       monitorMessage: "",
   showMonitorMessage: false
@@ -1178,11 +1179,20 @@ function animateGeneratedEtco2(timestamp) {
   const etco2LineD = buildGeneratedEtco2Path(etco2GeneratedBreaths);
 const etco2FillD = buildGeneratedEtco2FillPath(etco2GeneratedBreaths);
 
-etco2Path.setAttribute("d", etco2LineD);
+if (patient.showEtco2Wave) {
+  etco2Path.setAttribute("d", etco2LineD);
+} else {
+  etco2Path.setAttribute("d", "");
+}
 
 const etco2FillPath = document.getElementById("etco2FillPath");
+
 if (etco2FillPath) {
-  etco2FillPath.setAttribute("d", etco2FillD);
+  if (patient.showEtco2Wave) {
+    etco2FillPath.setAttribute("d", etco2FillD);
+  } else {
+    etco2FillPath.setAttribute("d", "");
+  }
 }
 
   requestAnimationFrame(animateGeneratedEtco2);
@@ -1256,6 +1266,12 @@ function updateMonitorPopup() {
         patient.showIcpWave ? "flex" : "none";
         document.getElementById("artWaveRow").style.display =
        patient.showArtWave ? "flex" : "none";
+
+       document.getElementById("etco2WaveRow").style.display =
+       patient.showEtco2Wave ? "flex" : "none";
+
+       document.getElementById("etco2Tile").style.display =
+       patient.showEtco2Wave ? "flex" : "none";
 
        document.getElementById("bpTile").style.display =
        patient.showArtWave ? "flex" : "none";
