@@ -1469,7 +1469,7 @@ function applyWarningColours(map, cpp) {
     redMessages.push("HR");
   }
 
-  if (patient.spo2 < 92) {
+  if (patient.spo2 < 87) {
     spo2Element.classList.add("flash-alarm");
     redMessages.push("SpO₂");
   }
@@ -1508,7 +1508,10 @@ function applyWarningColours(map, cpp) {
     cppElement.classList.add("flash-alarm");
     yellowMessages.push("CPP");
   }
-
+if (patient.spo2 >= 87 && patient.spo2 < 93) {
+  spo2Element.classList.add("flash-alarm");
+  yellowMessages.push("SpO₂");
+}
   // ------------------------------
   // Sound priority
   // Red sound overrides yellow sound
