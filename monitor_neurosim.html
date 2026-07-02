@@ -1675,15 +1675,19 @@ function updateMonitorPopup() {
         patient.showIcpWave ? "flex" : "none";
         document.getElementById("artWaveRow").style.display =
        patient.showArtWave ? "flex" : "none";
-
+document.getElementById("icpTrend").style.display =
+  patient.showIcpWave ? "flex" : "none";
        document.getElementById("etco2WaveRow").style.display =
        patient.showEtco2Wave ? "flex" : "none";
 
        document.getElementById("etco2Tile").style.display =
        patient.showEtco2Wave ? "flex" : "none";
-
+document.getElementById("etco2Trend").style.display =
+  patient.showEtco2Wave ? "flex" : "none";
        document.getElementById("bpTile").style.display =
        patient.showArtWave ? "flex" : "none";
+       document.getElementById("artTrend").style.display =
+  patient.showArtWave ? "flex" : "none";
       document.getElementById("hr").textContent = patient.hr;
       document.getElementById("spo2").textContent = patient.spo2;
       document.getElementById("bp").textContent = `${patient.systolic}/${patient.diastolic}`;
@@ -1877,7 +1881,7 @@ function applyWarningColours(map, cpp) {
     redMessages.push("HR");
   }
 
-  if (patient.spo2 < 92) {
+  if (patient.spo2 < 87) {
     spo2Element.classList.add("flash-alarm");
     redMessages.push("SpO₂");
   }
@@ -1916,7 +1920,10 @@ function applyWarningColours(map, cpp) {
     cppElement.classList.add("flash-alarm");
     yellowMessages.push("CPP");
   }
-
+ if (patient.spo2 >= 87 && patient.spo2 < 93) {
+  spo2Element.classList.add("flash-alarm");
+  yellowMessages.push("SpO₂");
+}
   // ------------------------------
   // Sound priority
   // Red sound overrides yellow sound
