@@ -163,6 +163,11 @@
   stroke-linejoin: round;
 }
 /* end temp static values for testing */
+/* test sweep ecg */
+.sweep-line {
+  stroke: rgba(255,255,255,0.8);
+  stroke-width: 2;
+}
     body {
       margin: 0;
       background: #111;
@@ -682,8 +687,18 @@
 
   <div class="wave-trace ecg-trace">
     <svg viewBox="0 0 1000 100" preserveAspectRatio="none">
-      <path id="ecgGeneratedPath"></path>
-    </svg>
+  <defs>
+    <clipPath id="ecgWriteClip">
+      <rect id="ecgWriteRect" x="0" y="0" width="0" height="100"></rect>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#ecgWriteClip)">
+    <path id="ecgGeneratedPath"></path>
+  </g>
+
+  <line id="ecgSweepLine" class="sweep-line" x1="0" y1="0" x2="0" y2="100"></line>
+</svg>
   </div>
 </div>
 
@@ -1202,6 +1217,9 @@ let ecgGeneratedBeats = [];
 let ecgLastFrameTime = null;
 let ecgTimeSinceLastBeat = 0;
 let ecgSeeded = false;
+let writeSweepX = 0;
+let lastWriteSweepTime = null;
+const writeSweepSpeed = 260; // higher = faster sweep
 
 // This is the screen/paper speed.
 // Higher = faster leftward movement.
@@ -1228,6 +1246,34 @@ function seedGeneratedEcgBeats() {
 
   ecgTimeSinceLastBeat = 0;
   ecgSeeded = true;
+}
+function animateWriteSweep(timestamp) {
+  if (lastWriteSweepTime === null) {
+    lastWriteSweepTime = timestamp;
+  }
+
+  const deltaSeconds = (timestamp - lastWriteSweepTime) / 1000;
+  lastWriteSweepTime = timestamp;
+
+  writeSweepX += writeSweepSpeed * deltaSeconds;
+
+  if (writeSweepX > 1000) {
+    writeSweepX = 0;
+  }
+
+  const ecgRect = document.getElementById("ecgWriteRect");
+  const ecgLine = document.getElementById("ecgSweepLine");
+
+  if (ecgRect) {
+    ecgRect.setAttribute("width", writeSweepX);
+  }
+
+  if (ecgLine) {
+    ecgLine.setAttribute("x1", writeSweepX);
+    ecgLine.setAttribute("x2", writeSweepX);
+  }
+
+  requestAnimationFrame(animateWriteSweep);
 }
 function getArtScaleForHr(hr) {
   const secondsPerBeat = 60 / hr;
@@ -2286,6 +2332,7 @@ function simNoradAfterSedation() {
     requestAnimationFrame(animateCardiacWaves);
     requestAnimationFrame(animateGeneratedEtco2);
     requestAnimationFrame(animateGeneratedEcg);
+    requestAnimationFrame(animateWriteSweep);
   </script>
 </body>
 </html>
