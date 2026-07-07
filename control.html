@@ -587,8 +587,8 @@ function simBasicCare() {
   });
 
   gradualChange("icp", clamp(patient.icp - 10, 0, 80), 1, 2000);
-  gradualChange("systolic", clamp(patient.systolic - 8, 50, 240), 2, 3000);
-  gradualChange("diastolic", clamp(patient.diastolic - 4, 20, 140), 1, 3000);
+ gradualChange("systolic", clamp(patient.systolic - 4, 50, 240), 2, 3000);
+gradualChange("diastolic", clamp(patient.diastolic - 2, 20, 140), 1, 3000);
 }
 
 function simAgitatedRise() {
