@@ -590,12 +590,27 @@
   </div>
 </div>
 
-<div class="tile">
-  <div class="label">SpO₂</div>
-  <div>
+<div id="spo2Tile" class="tile compact-tile">
+
+  <div id="spo2Label" class="label">SpO₂</div>
+
+  <div id="spo2Single">
     <span id="spo2" class="value blue">98</span>
     <span class="unit">%</span>
   </div>
+
+  <div id="spo2Combined" class="combined-values" style="display:none;">
+    <div class="value-pair">
+      <span id="spo2CombinedValue" class="value blue compact-value">98</span>
+      <span class="value-pair-label">%</span>
+    </div>
+
+    <div class="value-pair">
+      <span id="rrMini" class="value white compact-value">16</span>
+      <span class="value-pair-label">RR</span>
+    </div>
+  </div>
+
 </div>
 
 <div id="etco2WaveRow" class="wave-row">
@@ -1330,7 +1345,21 @@ function updateMonitorPopup() {
       document.getElementById("rr").textContent = patient.rr;
       document.getElementById("etco2").textContent = patient.etco2.toFixed(1);
       document.getElementById("scenario").textContent = `Scenario: ${patient.scenario}`;
+if (patient.showEtco2Wave) {
 
+  document.getElementById("spo2Single").style.display = "block";
+  document.getElementById("spo2Combined").style.display = "none";
+  document.getElementById("spo2Label").textContent = "SpO₂";
+
+} else {
+
+  document.getElementById("spo2Single").style.display = "none";
+  document.getElementById("spo2Combined").style.display = "grid";
+  document.getElementById("spo2Label").textContent = "SpO₂ / RR";
+
+  document.getElementById("rrMini").textContent = patient.rr;
+  document.getElementById("spo2CombinedValue").textContent = patient.spo2;
+}
       applyWarningColours(map, cpp);
       updateMonitorPopup();
       
