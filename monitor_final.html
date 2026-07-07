@@ -1743,20 +1743,22 @@ function applyWarningColours(map, cpp) {
     redMessages.push("SpO₂");
   }
 
- if (map < 55) {
+ if (patient.showArtWave && map < 55) {
   mapElement.classList.add("flash-alarm");
   redMessages.push("MAP");
 }
 
-  if (patient.icp > 35) {
-    icpElement.classList.add("flash-alarm");
-    redMessages.push("ICP");
-  }
+  if (patient.showIcpWave && patient.icp > 35) {
+  icpElement.classList.add("flash-alarm");
+  redMessages.push("ICP");
+}
 
-  if (cpp < 50) {
-    cppElement.classList.add("flash-alarm");
-    redMessages.push("CPP");
-  }
+if (patient.showIcpWave && cpp < 50) {
+  cppElement.classList.add("flash-alarm");
+  redMessages.push("CPP");
+}
+
+ 
 
   // ------------------------------
   // YELLOW alarms
@@ -1767,19 +1769,20 @@ function applyWarningColours(map, cpp) {
     hrElement.classList.add("flash-alarm");
     yellowMessages.push("HR");
   }
-if (map >= 55 && map < 65) {
+if (patient.showArtWave && map >= 55 && map < 65) {
   mapElement.classList.add("flash-alarm");
   yellowMessages.push("MAP");
 }
-  if (patient.icp > 20 && patient.icp <= 35) {
-    icpElement.classList.add("flash-alarm");
-    yellowMessages.push("ICP");
-  }
+ if (patient.showIcpWave && patient.icp > 20 && patient.icp <= 35) {
+  icpElement.classList.add("flash-alarm");
+  yellowMessages.push("ICP");
+}
 
-  if (cpp <= 65 && cpp >= 50) {
-    cppElement.classList.add("flash-alarm");
-    yellowMessages.push("CPP");
-  }
+if (patient.showIcpWave && cpp <= 65 && cpp >= 50) {
+  cppElement.classList.add("flash-alarm");
+  yellowMessages.push("CPP");
+}
+
 if (patient.spo2 >= 87 && patient.spo2 < 93) {
   spo2Element.classList.add("flash-alarm");
   yellowMessages.push("SpO₂");
