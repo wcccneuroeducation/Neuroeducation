@@ -313,8 +313,14 @@ function formatTimer(seconds) {
   document.getElementById("etco2Value").textContent = Number(patient.etco2).toFixed(1);
   document.getElementById("scenarioValue").textContent = patient.scenario;
 
-  document.getElementById("timerValue").textContent =
-    formatTimer(patient.timerSeconds || 0);
+  let totalSeconds = patient.timerSeconds || 0;
+
+if (patient.timerRunning && patient.timerStartedAt) {
+  totalSeconds = Math.floor((Date.now() - patient.timerStartedAt) / 1000);
+}
+
+document.getElementById("timerValue").textContent =
+  formatTimer(totalSeconds);
 }
 
     // ------------------------------
@@ -595,6 +601,7 @@ function simNoradAfterSedation() {
   gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
   gradualChange("icp", clamp(patient.icp - 2, 0, 80), 1, 4000);
 }
+setInterval(updateControlDisplay, 1000);
   </script>
 </body>
 </html>
