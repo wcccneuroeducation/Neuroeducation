@@ -846,17 +846,19 @@ const ecgPaperSpeed = 180;
 function seedGeneratedEcgBeats() {
   ecgGeneratedBeats = [];
 
-  const secondsPerBeat = 60 / patient.hr;
+ const waveHr = Math.min(patient.hr, 150);
+const secondsPerBeat = 60 / waveHr;
   const spacing = ecgPaperSpeed * secondsPerBeat;
 
   // Fill the screen with beats based on current HR
   for (let x = 1000; x > -160; x -= spacing) {
    ecgGeneratedBeats.push({
   x,
-  scale: getEcgScaleForHr(patient.hr),
-  artScale: getArtScaleForHr(patient.hr),
-  icpScale: getIcpScaleForHr(patient.hr),
-  spo2Scale: getSpo2ScaleForHr(patient.hr)
+  scale: getEcgScaleForHr(waveHr),
+  artScale: getArtScaleForHr(waveHr),
+  icpScale: getIcpScaleForHr(waveHr),
+  spo2Scale: getSpo2ScaleForHr(waveHr)
+
   
 });
   }
@@ -904,18 +906,19 @@ function animateGeneratedEcg(timestamp) {
   const deltaSeconds = (timestamp - ecgLastFrameTime) / 1000;
   ecgLastFrameTime = timestamp;
   
-  const secondsPerBeat = 60 / patient.hr;
+const waveHr = Math.min(patient.hr, 150);
+const secondsPerBeat = 60 / waveHr;
 
   ecgTimeSinceLastBeat += deltaSeconds;
 
   // Add new complexes based on HR timing
   while (ecgTimeSinceLastBeat >= secondsPerBeat) {
-    ecgGeneratedBeats.push({
+  ecgGeneratedBeats.push({
   x: 1040,
-  scale: getEcgScaleForHr(patient.hr),
-  artScale: getArtScaleForHr(patient.hr),
-  icpScale: getIcpScaleForHr(patient.hr),
-  spo2Scale: getSpo2ScaleForHr(patient.hr)
+  scale: getEcgScaleForHr(waveHr),
+  artScale: getArtScaleForHr(waveHr),
+  icpScale: getIcpScaleForHr(waveHr),
+  spo2Scale: getSpo2ScaleForHr(waveHr)
 });
     ecgTimeSinceLastBeat -= secondsPerBeat;
   }
@@ -958,7 +961,6 @@ function getEcgScaleForHr(hr) {
   const secondsPerBeat = 60 / hr;
   const beatSpacing = ecgPaperSpeed * secondsPerBeat;
 
-  // Pinch the complex when beats are closer together
   return Math.min(1, Math.max(0.55, beatSpacing / 140));
 }
 
