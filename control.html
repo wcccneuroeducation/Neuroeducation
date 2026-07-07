@@ -467,7 +467,34 @@ function gradualIntChangeOverTime(parameter, targetValue, totalMs) {
 
   activeIntervals.push(interval);
 }
+function timedDecimalChangeOverTime(parameter, startValue, targetValue, stepAmount, totalMs) {
+  const startTime = Date.now();
 
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / totalMs, 1);
+
+    const updatedPatient = { ...patient };
+
+    updatedPatient[parameter] =
+      startValue + ((targetValue - startValue) * progress);
+
+    updatedPatient[parameter] =
+      Math.round(updatedPatient[parameter] / stepAmount) * stepAmount;
+
+    updatedPatient[parameter] =
+      Math.round(updatedPatient[parameter] * 10) / 10;
+
+    writePatient(updatedPatient);
+
+    if (progress >= 1) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+    }
+  }, 1000);
+
+  activeIntervals.push(interval);
+}
 function gradualDecimalChangeOverTime(parameter, targetValue, stepAmount, totalMs) {
   const startValue = patient[parameter];
   const difference = targetValue - startValue;
@@ -549,7 +576,7 @@ timedIntChangeOverTime("spo2", 98, 97, twoMinutes);
 timedIntChangeOverTime("systolic", 120, 125, twoMinutes);
 timedIntChangeOverTime("diastolic", 70, 65, twoMinutes);
 timedIntChangeOverTime("icp", 14, 26, twoMinutes);
-timedDecimalChangeOverTime("etco2", 4.8, 4.6, twoMinutes);
+timedDecimalChangeOverTime("etco2", 4.8, 4.6, 0.1, twoMinutes);
 }
 
 function simBasicCare() {
