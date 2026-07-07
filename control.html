@@ -249,7 +249,9 @@
       showEtco2Wave: true,
       scenario: "Baseline",
       sedationGiven: false,
-      timerSeconds: 0
+      timerSeconds: 0,
+      timerRunning: false,
+timerStartedAt: null
     };
 
     const baselinePatient = {
@@ -265,7 +267,9 @@
       showEtco2Wave: true,
       scenario: "Baseline",
       sedationGiven: false,
-      timerSeconds: 0
+      timerSeconds: 0,
+      timerRunning: false,
+timerStartedAt: null
     };
 
     // ------------------------------
@@ -475,28 +479,17 @@ function gradualDecimalChangeOverTime(parameter, targetValue, stepAmount, totalM
 // ------------------------------
 
 function startSimTimer() {
-  stopSimTimer();
-
-  let seconds = 0;
-
   roomRef.update({
-    timerSeconds: seconds
+    timerSeconds: 0,
+    timerRunning: true,
+    timerStartedAt: Date.now()
   });
-
-  simTimerInterval = setInterval(() => {
-    seconds++;
-
-    roomRef.update({
-      timerSeconds: seconds
-    });
-  }, 1000);
 }
 
 function stopSimTimer() {
-  if (simTimerInterval !== null) {
-    clearInterval(simTimerInterval);
-    simTimerInterval = null;
-  }
+  roomRef.update({
+    timerRunning: false
+  });
 }
 
 // ------------------------------
@@ -517,7 +510,7 @@ function simStartKinked() {
     etco2: 4.8,
     scenario: "Start: deterioration over 2 minutes",
     sedationGiven: false,
-    timerSeconds: 0
+    
   });
 
   const twoMinutes = 120000;
