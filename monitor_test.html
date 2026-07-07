@@ -711,7 +711,9 @@ const roomRef = database.ref("simRooms/neuro1");
 const simState = {
   sedationGiven: false,
   timerInterval: null,
-  timerSeconds: 0
+  timerSeconds: 0,
+  timerRunning: false,
+  timerStartedAt: null
 };
 roomRef.on("value", (snapshot) => {
   const data = snapshot.val();
@@ -734,7 +736,8 @@ roomRef.on("value", (snapshot) => {
 
   simState.sedationGiven = data.sedationGiven || false;
   simState.timerSeconds = data.timerSeconds || 0;
-
+simState.timerRunning = data.timerRunning || false;
+simState.timerStartedAt = data.timerStartedAt || null;
   updateMonitor();
   updateSimTimerDisplay();
 });
@@ -1670,8 +1673,14 @@ function resetSimTimer() {
 }
 
 function updateSimTimerDisplay() {
-  const minutes = Math.floor(simState.timerSeconds / 60);
-  const seconds = simState.timerSeconds % 60;
+  let totalSeconds = simState.timerSeconds || 0;
+
+  if (simState.timerRunning && simState.timerStartedAt) {
+    totalSeconds = Math.floor((Date.now() - simState.timerStartedAt) / 1000);
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
 
   const timeText =
     String(minutes).padStart(2, "0") +
@@ -1914,6 +1923,7 @@ function simNoradAfterSedation() {
     updateSimTimerDisplay();
 
     setInterval(updateClock, 1000);
+    setInterval(updateSimTimerDisplay, 1000);
     requestAnimationFrame(animateCardiacWaves);
     requestAnimationFrame(animateGeneratedEtco2);
     requestAnimationFrame(animateGeneratedEcg);
