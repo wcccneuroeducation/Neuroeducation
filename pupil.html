@@ -42,28 +42,33 @@ html, body {
     -webkit-user-drag: none;
 }
 
-/* Moving eyelid overlays */
+/* Moving eyelid and eyelashes */
 .eyelid {
     transform: translateY(0);
-    transition: transform 0.4s ease-in-out;
+    opacity: 1;
+    transition:
+        transform 0.4s ease-in-out,
+        opacity 0.4s ease-in-out;
 }
 
 .eyelid.open {
     transform: translateY(-35%);
-    transition-duration: 0.6s;
+    opacity: 0.25;
+    transition:
+        transform 0.6s ease-in-out,
+        opacity 0.6s ease-in-out;
 }
 
 /* Stationary closed-eye overlay */
 .static-lid {
     opacity: 1;
-    transition: opacity 0.4s ease-in-out;
+    transition: opacity 0.5s ease-in-out;
 }
 
 .static-lid.open {
     opacity: 0;
-    transition-duration: 0.6s;
+    transition: opacity 0.85s ease-in-out;
 }
-
 /* Invisible examination areas */
 .eye-touch {
     position: absolute;
