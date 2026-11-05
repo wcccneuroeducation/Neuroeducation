@@ -458,6 +458,7 @@ setupEye(
     "pupil-screen-left"
 );
 
+
 /* ========================================
    PUPIL LIGHT RESPONSE
 ======================================== */
@@ -482,45 +483,51 @@ function resetPupils() {
 function triggerLightResponse() {
     const now = Date.now();
 
-    /* Avoid repeated triggers from exposure adjustment */
+    /* Prevent repeated triggers from camera exposure */
     if (now - lastLightTime < 2200) return;
 
     lastLightTime = now;
     clearResponseTimers();
 
     ["left", "right"].forEach(eye => {
+
         const setting = pupilSettings[eye];
 
-        if (setting.response === 0) {
-            return;
-        }
+        /* Fixed pupil: no response */
+        if (setting.response === 0) return;
 
-        const duration =
-            setting.response === 1 ? 0.3 : 1.2;
+        const isBrisk = setting.response === 1;
 
-        /* Constrict both eyes simultaneously */
+        /* Different constriction speeds */
+        const constrictionTime = isBrisk ? 0.3 : 2.0;
+
+        /* Hold after constriction finishes */
+        const holdTime = isBrisk ? 700 : 700;
+
+        /* Different recovery speeds */
+        const recoveryTime = isBrisk ? 0.65 : 1.2;
+
+        /* Start constriction */
         setPupilSize(
             eye,
             setting.constricted,
-            duration
+            constrictionTime
         );
-    });
 
-    /* Recovery after the initial light stimulus */
-    responseTimers.push(setTimeout(() => {
-        ["left", "right"].forEach(eye => {
-            const setting = pupilSettings[eye];
+        /* Recover independently after constriction + hold */
+        const recoveryDelay =
+            constrictionTime * 1000 + holdTime;
 
-            if (setting.response === 0) return;
-
+        responseTimers.push(setTimeout(() => {
             setPupilSize(
                 eye,
                 setting.resting,
-                setting.response === 1 ? 0.65 : 1.0
+                recoveryTime
             );
-        });
-    }, 1500));
+        }, recoveryDelay));
+    });
 }
+
 
 /* ========================================
    CAMERA LIGHT DETECTION
