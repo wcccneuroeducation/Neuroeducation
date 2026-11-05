@@ -4,8 +4,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport"
- content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+      content="width=device-width, initial-scale=1,
+      viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent">
+<meta name="theme-color" content="#000000">
 <title>Neuro1 Pupil Simulator</title>
 
 <style>
@@ -16,6 +20,7 @@
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
 }
+
 html, body {
     margin: 0;
     width: 100%;
@@ -23,12 +28,16 @@ html, body {
     overflow: hidden;
     background: black;
     touch-action: none;
+    overscroll-behavior: none;
 }
+
 #face {
     position: absolute;
     inset: 0;
     overflow: hidden;
+    touch-action: none;
 }
+
 .face-image {
     position: absolute;
     inset: 0;
@@ -38,6 +47,9 @@ html, body {
     pointer-events: none;
     -webkit-user-drag: none;
 }
+
+/* PUPILS */
+
 .pupil {
     position: absolute;
     width: var(--pupil-size);
@@ -48,21 +60,35 @@ html, body {
     pointer-events: none;
     z-index: 2;
     opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+    transition:
+        opacity 0.5s ease-in-out,
+        width 0.3s ease-in-out,
+        height 0.3s ease-in-out;
 }
+
 .pupil.visible {
     opacity: 1;
-    transition: opacity 0.85s ease-in-out;
+    transition:
+        opacity 0.85s ease-in-out,
+        width 0.3s ease-in-out,
+        height 0.3s ease-in-out;
 }
+
+/* EYELIDS */
+
 .static-lid {
     z-index: 3;
     opacity: 1;
     transition: opacity 0.5s ease-in-out;
 }
+
 .static-lid.open {
     opacity: 0;
-    transition: opacity 0.85s ease-in-out;
+    transition-duration: 0.85s;
 }
+
+/* TOUCH AREAS */
+
 .eye-touch {
     position: absolute;
     top: 5%;
@@ -72,46 +98,95 @@ html, body {
     touch-action: none;
     cursor: pointer;
 }
+
 #left-touch { right: 7%; }
 #right-touch { left: 7%; }
 
-/* Temporary camera diagnostic panel */
-#camera-panel {
+/* SETUP PANEL */
+
+#setup-panel {
     position: fixed;
     left: 50%;
     bottom: max(8px, env(safe-area-inset-bottom));
     transform: translateX(-50%);
     z-index: 30;
-    background: rgba(0,0,0,0.82);
+    width: min(420px, 92vw);
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.9);
     color: white;
-    border-radius: 10px;
-    padding: 7px 12px;
+    border: 1px solid #555;
+    border-radius: 12px;
     font: 12px Arial, sans-serif;
     text-align: center;
     touch-action: manipulation;
-    min-width: 220px;
 }
-#camera-panel button {
-    background: #2478db;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 14px;
+
+#setup-panel.hidden {
+    display: none;
+}
+
+.panel-title {
+    font-size: 15px;
     font-weight: bold;
-    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.settings-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.settings-row label {
+    white-space: nowrap;
+}
+
+.settings-row input {
+    width: 65px;
+    padding: 5px;
+    font-size: 15px;
+    text-align: center;
+    border-radius: 5px;
+    border: 1px solid #888;
+    background: #222;
+    color: white;
     touch-action: manipulation;
 }
-#camera-status {
+
+.panel-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+#setup-panel button {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    background: #2478db;
+    touch-action: manipulation;
+}
+
+#begin-button {
+    background: #16864a !important;
+}
+
+#camera-status,
+#brightness-status,
+#light-status {
     margin-top: 5px;
 }
-#light-status {
-    margin-top: 4px;
-    font-weight: bold;
-    color: #aaa;
-}
+
 #light-status.detected {
     color: #58ff88;
+    font-weight: bold;
 }
+
 #brightness-bar {
     height: 5px;
     background: #444;
@@ -119,11 +194,25 @@ html, body {
     margin-top: 6px;
     overflow: hidden;
 }
+
 #brightness-fill {
     height: 100%;
     width: 0%;
     background: #58ff88;
 }
+
+/* INVISIBLE INSTRUCTOR CORNER */
+
+#instructor-corner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 65px;
+    height: 55px;
+    z-index: 20;
+    touch-action: none;
+}
+
 </style>
 </head>
 
@@ -153,17 +242,45 @@ html, body {
 
 </div>
 
-<!-- Camera test controls -->
-<div id="camera-panel">
-    <button id="camera-button">Start Front Camera</button>
+<!-- INSTRUCTOR SETUP -->
+
+<div id="setup-panel">
+
+    <div class="panel-title">Neuro1 Pupil Setup</div>
+
+    <div class="settings-row">
+        <label for="left-code">Patient LEFT</label>
+        <input id="left-code"
+               type="text"
+               inputmode="numeric"
+               maxlength="3"
+               value="321">
+
+        <label for="right-code">RIGHT</label>
+        <input id="right-code"
+               type="text"
+               inputmode="numeric"
+               maxlength="3"
+               value="322">
+    </div>
+
+    <div class="panel-buttons">
+        <button id="camera-button">Activate Camera</button>
+        <button id="begin-button">Begin Simulation</button>
+    </div>
+
     <div id="camera-status">Camera not started</div>
+    <div id="brightness-status">Brightness: --</div>
     <div id="light-status">Waiting for camera</div>
+
     <div id="brightness-bar">
         <div id="brightness-fill"></div>
     </div>
+
 </div>
 
-<!-- Camera video is processed, not displayed -->
+<div id="instructor-corner"></div>
+
 <video id="camera-video"
        autoplay muted playsinline
        style="display:none"></video>
@@ -175,7 +292,7 @@ html, body {
 <script>
 
 /* ========================================
-   PUPIL POSITIONING - FIXED 3 MM
+   PUPIL CONFIGURATION
 ======================================== */
 
 const pupilCenters = {
@@ -183,39 +300,114 @@ const pupilCenters = {
     right: { x: 82.59, y: 52.29 }
 };
 
-const PUPIL_MM = 3;
 const IRIS_DIAMETER_PERCENT = 13;
 
-function positionPupils() {
-    const face = document.getElementById("face");
+/*
+Pupil codes:
+321 = 3 mm to 2 mm, brisk
+322 = 3 mm to 2 mm, sluggish
+770 = 7 mm fixed
+821 = 8 mm to 2 mm, brisk
 
+First digit: resting size
+Second digit: constricted size
+Third digit: response
+0 = fixed
+1 = brisk
+2 = sluggish
+*/
+
+function parsePupilCode(code) {
+    if (!/^[1-8][0-8][012]$/.test(code)) {
+        throw new Error("Enter a valid three-digit pupil code.");
+    }
+
+    const resting = Number(code[0]);
+    const constricted = Number(code[1]);
+    const response = Number(code[2]);
+
+    if (response === 0 && resting !== constricted) {
+        throw new Error("Fixed pupils must have equal sizes.");
+    }
+
+    if (response !== 0 &&
+        (constricted < 1 || constricted >= resting)) {
+        throw new Error("Reactive pupils need a smaller final size.");
+    }
+
+    return { resting, constricted, response };
+}
+
+let pupilSettings = {
+    left: parsePupilCode("321"),
+    right: parsePupilCode("322")
+};
+
+/* Patient's LEFT is screen RIGHT */
+const pupilElements = {
+    left: document.getElementById("pupil-screen-right"),
+    right: document.getElementById("pupil-screen-left")
+};
+
+let currentSizes = {
+    left: pupilSettings.left.resting,
+    right: pupilSettings.right.resting
+};
+
+let responseTimers = [];
+let lastLightTime = 0;
+
+/* ========================================
+   POSITION AND SIZE PUPILS
+======================================== */
+
+function pupilPixels(mm) {
+    const face = document.getElementById("face");
     const irisDiameterPx =
         face.clientWidth * IRIS_DIAMETER_PERCENT / 100;
 
-    const pupilDiameterPx =
-        irisDiameterPx * (PUPIL_MM / 12);
+    return irisDiameterPx * (mm / 12);
+}
 
-    const positions = [
-        ["pupil-screen-left", pupilCenters.left],
-        ["pupil-screen-right", pupilCenters.right]
-    ];
+function positionPupils() {
+    const positions = {
+        left: pupilCenters.right,
+        right: pupilCenters.left
+    };
 
-    positions.forEach(([id, pos]) => {
-        const pupil = document.getElementById(id);
+    ["left", "right"].forEach(eye => {
+        const pupil = pupilElements[eye];
+        const pos = positions[eye];
+
         pupil.style.left = pos.x + "%";
         pupil.style.top = pos.y + "%";
+
         pupil.style.setProperty(
             "--pupil-size",
-            pupilDiameterPx + "px"
+            pupilPixels(currentSizes[eye]) + "px"
         );
     });
+}
+
+function setPupilSize(eye, mm, duration = 0.3) {
+    currentSizes[eye] = mm;
+
+    const pupil = pupilElements[eye];
+
+    pupil.style.transitionDuration =
+        "0.85s, " + duration + "s, " + duration + "s";
+
+    pupil.style.setProperty(
+        "--pupil-size",
+        pupilPixels(mm) + "px"
+    );
 }
 
 window.addEventListener("resize", positionPupils);
 positionPupils();
 
 /* ========================================
-   PREVENT IPHONE SELECTION
+   IPHONE SELECTION PREVENTION
 ======================================== */
 
 document.addEventListener("contextmenu", e => e.preventDefault());
@@ -229,7 +421,7 @@ document.getElementById("face").addEventListener(
 );
 
 /* ========================================
-   INDEPENDENT EYELIDS
+   EYELID CONTROLS
 ======================================== */
 
 function setupEye(touchId, eyelidId, pupilId) {
@@ -254,11 +446,84 @@ function setupEye(touchId, eyelidId, pupilId) {
     touch.addEventListener("lostpointercapture", closeEye);
 }
 
-setupEye("left-touch", "left-static", "pupil-screen-right");
-setupEye("right-touch", "right-static", "pupil-screen-left");
+setupEye(
+    "left-touch",
+    "left-static",
+    "pupil-screen-right"
+);
+
+setupEye(
+    "right-touch",
+    "right-static",
+    "pupil-screen-left"
+);
 
 /* ========================================
-   FRONT CAMERA LIGHT DETECTION
+   PUPIL LIGHT RESPONSE
+======================================== */
+
+function clearResponseTimers() {
+    responseTimers.forEach(clearTimeout);
+    responseTimers = [];
+}
+
+function resetPupils() {
+    clearResponseTimers();
+
+    ["left", "right"].forEach(eye => {
+        setPupilSize(
+            eye,
+            pupilSettings[eye].resting,
+            0.2
+        );
+    });
+}
+
+function triggerLightResponse() {
+    const now = Date.now();
+
+    /* Avoid repeated triggers from exposure adjustment */
+    if (now - lastLightTime < 2200) return;
+
+    lastLightTime = now;
+    clearResponseTimers();
+
+    ["left", "right"].forEach(eye => {
+        const setting = pupilSettings[eye];
+
+        if (setting.response === 0) {
+            return;
+        }
+
+        const duration =
+            setting.response === 1 ? 0.3 : 1.2;
+
+        /* Constrict both eyes simultaneously */
+        setPupilSize(
+            eye,
+            setting.constricted,
+            duration
+        );
+    });
+
+    /* Recovery after the initial light stimulus */
+    responseTimers.push(setTimeout(() => {
+        ["left", "right"].forEach(eye => {
+            const setting = pupilSettings[eye];
+
+            if (setting.response === 0) return;
+
+            setPupilSize(
+                eye,
+                setting.resting,
+                setting.response === 1 ? 0.65 : 1.0
+            );
+        });
+    }, 1500));
+}
+
+/* ========================================
+   CAMERA LIGHT DETECTION
 ======================================== */
 
 const video = document.getElementById("camera-video");
@@ -269,17 +534,21 @@ const ctx = canvas.getContext("2d", {
 
 const cameraButton = document.getElementById("camera-button");
 const cameraStatus = document.getElementById("camera-status");
+const brightnessStatus = document.getElementById("brightness-status");
 const lightStatus = document.getElementById("light-status");
 const brightnessFill = document.getElementById("brightness-fill");
 
 let cameraStream = null;
 let cameraTimer = null;
 let baseline = null;
-let detected = false;
+let previousBrightPercent = null;
+let lightArmed = true;
+let lastBrightSpike = 0;
 
-/* Test sensitivity - can adjust later */
+/* Tune these after testing on the iPhone */
 const LIGHT_THRESHOLD = 25;
-const ABSOLUTE_BRIGHTNESS = 225;
+const BRIGHT_PIXEL_JUMP = 15;
+const BRIGHT_PIXEL_MINIMUM = 18;
 
 cameraButton.addEventListener("click", async () => {
     if (cameraStream) {
@@ -288,7 +557,7 @@ cameraButton.addEventListener("click", async () => {
     }
 
     cameraButton.disabled = true;
-    cameraStatus.textContent = "Requesting camera permission...";
+    cameraStatus.textContent = "Requesting camera...";
 
     try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -304,7 +573,8 @@ cameraButton.addEventListener("click", async () => {
         await video.play();
 
         baseline = null;
-        detected = false;
+        previousBrightPercent = null;
+        lightArmed = true;
 
         cameraButton.textContent = "Stop Camera";
         cameraStatus.textContent = "Front camera active";
@@ -325,7 +595,6 @@ function measureBrightness() {
     if (!video.videoWidth || !video.videoHeight) return;
 
     ctx.drawImage(video, 0, 0, 80, 60);
-
     const pixels = ctx.getImageData(0, 0, 80, 60).data;
 
     let total = 0;
@@ -340,46 +609,66 @@ function measureBrightness() {
 
         total += brightness;
 
-        if (brightness > 235) {
-            brightPixels++;
-        }
+        if (brightness > 235) brightPixels++;
     }
 
     const average = total / count;
     const brightPercent = brightPixels / count * 100;
 
-    if (baseline === null) {
-        baseline = average;
-    }
+    if (baseline === null) baseline = average;
 
     const increase = average - baseline;
+    const brightJump =
+        previousBrightPercent === null
+            ? 0
+            : brightPercent - previousBrightPercent;
 
-    /* Detect sudden brightness increase or intense light */
     const lightNow =
-        increase > LIGHT_THRESHOLD ||
-        average > ABSOLUTE_BRIGHTNESS ||
-        (brightPercent > 18 && increase > 10);
+        (brightPercent >= BRIGHT_PIXEL_MINIMUM &&
+         brightJump >= BRIGHT_PIXEL_JUMP) ||
+        (increase > LIGHT_THRESHOLD &&
+         brightPercent > 10);
 
-    detected = lightNow;
+    const now = Date.now();
 
-    lightStatus.textContent = detected
+    if (lightNow) {
+        lastBrightSpike = now;
+
+        if (lightArmed) {
+            lightArmed = false;
+            triggerLightResponse();
+        }
+    }
+
+    /*
+    Rearm after the brightness settles and
+    the cooldown has elapsed.
+    */
+    if (!lightArmed &&
+        now - lastBrightSpike > 1800 &&
+        now - lastLightTime > 2200 &&
+        brightPercent < 12) {
+        lightArmed = true;
+    }
+
+    lightStatus.textContent = lightNow
         ? "LIGHT DETECTED"
-        : "No light detected";
+        : (lightArmed ? "Ready for torch" : "Response / reset");
 
-    lightStatus.classList.toggle("detected", detected);
+    lightStatus.classList.toggle("detected", lightNow);
 
-    cameraStatus.textContent =
+    brightnessStatus.textContent =
         "Brightness: " + average.toFixed(1) +
-        " | Baseline: " + baseline.toFixed(1) +
         " | Bright pixels: " + brightPercent.toFixed(0) + "%";
 
     brightnessFill.style.width =
-        Math.min(100, average / 255 * 100) + "%";
+        Math.min(100, brightPercent) + "%";
 
-    /* Slowly adapt to room lighting when no light detected */
-    if (!detected) {
+    if (!lightNow) {
         baseline = baseline * 0.98 + average * 0.02;
     }
+
+    previousBrightPercent = brightPercent;
 }
 
 function stopCamera(resetStatus = true) {
@@ -395,9 +684,10 @@ function stopCamera(resetStatus = true) {
 
     video.srcObject = null;
     baseline = null;
-    detected = false;
+    previousBrightPercent = null;
+    lightArmed = true;
 
-    cameraButton.textContent = "Start Front Camera";
+    cameraButton.textContent = "Activate Camera";
     lightStatus.textContent = "Waiting for camera";
     lightStatus.classList.remove("detected");
     brightnessFill.style.width = "0%";
@@ -406,6 +696,73 @@ function stopCamera(resetStatus = true) {
         cameraStatus.textContent = "Camera stopped";
     }
 }
+
+/* ========================================
+   INSTRUCTOR SETUP
+======================================== */
+
+const setupPanel = document.getElementById("setup-panel");
+const beginButton = document.getElementById("begin-button");
+
+function applyPupilCodes() {
+    try {
+        const leftCode =
+            document.getElementById("left-code").value.trim();
+
+        const rightCode =
+            document.getElementById("right-code").value.trim();
+
+        const newLeft = parsePupilCode(leftCode);
+        const newRight = parsePupilCode(rightCode);
+
+        pupilSettings.left = newLeft;
+        pupilSettings.right = newRight;
+
+        resetPupils();
+        return true;
+
+    } catch (error) {
+        alert(error.message);
+        return false;
+    }
+}
+
+beginButton.addEventListener("click", () => {
+    if (!cameraStream) {
+        alert("Activate the front camera first.");
+        return;
+    }
+
+    if (!applyPupilCodes()) return;
+
+    setupPanel.classList.add("hidden");
+});
+
+/* HOLD BOTTOM-LEFT FOR 3 SECONDS */
+
+const corner = document.getElementById("instructor-corner");
+let cornerTimer = null;
+
+corner.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    corner.setPointerCapture(event.pointerId);
+
+    cornerTimer = setTimeout(() => {
+        setupPanel.classList.remove("hidden");
+        cornerTimer = null;
+    }, 3000);
+});
+
+function cancelCornerHold() {
+    if (cornerTimer !== null) {
+        clearTimeout(cornerTimer);
+        cornerTimer = null;
+    }
+}
+
+corner.addEventListener("pointerup", cancelCornerHold);
+corner.addEventListener("pointercancel", cancelCornerHold);
+corner.addEventListener("lostpointercapture", cancelCornerHold);
 
 window.addEventListener("pagehide", () => stopCamera());
 
