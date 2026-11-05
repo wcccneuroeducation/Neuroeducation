@@ -97,24 +97,6 @@
   font-size: 1.2rem;
   font-weight: bold;
 }
-
-/* Compact collapsible pupil controls */
-.pupil-summary { cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:1rem; color:#ddd; }
-.pupil-summary strong { color:#fff; }
-.pupil-summary .pupil-current { font-size:.82rem; color:#00ccff; text-align:right; }
-.pupil-settings { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:14px; }
-.pupil-eye { min-width:0; border:1px solid #333; border-radius:9px; padding:10px; background:#181818; }
-.pupil-eye h3 { margin:0 0 10px; font-size:.95rem; }
-.pupil-eye label { display:block; font-size:.8rem; color:#bbb; margin:9px 0 4px; }
-.pupil-eye input { width:100%; min-width:0; font-size:1.05rem; padding:9px 5px; border-radius:7px; border:1px solid #666; background:#080808; color:white; text-align:center; }
-.pupil-speed { display:flex; gap:4px; }
-.pupil-speed button { min-width:0; flex:1; padding:9px 2px; font-size:.75rem; border-radius:6px; }
-.pupil-speed button.selected { background:#145e91; border-color:#4bbcff; }
-.pupil-speed button:disabled { opacity:.4; }
-.pupil-code { color:#aaa; font-size:.78rem; margin-top:9px; }
-.pupil-actions { display:flex; gap:8px; margin-top:12px; }
-.pupil-actions button { min-width:0; padding:11px 6px; font-size:.88rem; }
-#pupilFeedback { font-size:.8rem; color:#aaa; margin-top:8px; min-height:1em; }
   </style>
 </head>
 
@@ -303,7 +285,6 @@ timerStartedAt: null
       }
 
       patient = data;
-      syncPupilControls(data);
 
       document.getElementById("connectionStatus").textContent = "Connected to neuro1";
       updateControlDisplay();
@@ -392,7 +373,7 @@ function clearEndOfSimPopup() {
     function resetPatient() {
   clearGradualChanges();
   stopSimTimer();
-  roomRef.set({ ...baselinePatient, pupilLeft: "321", pupilRight: "321" });
+  roomRef.set(baselinePatient);
 }
 
     function clamp(value, min, max) {
@@ -670,121 +651,6 @@ function simNoradAfterSedation() {
   gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
   gradualChange("icp", clamp(patient.icp - 2, 0, 80), 1, 4000);
 }
-
-// ------------------------------
-// Independent pupil settings
-// ------------------------------
-const pupilDraft = {
-  Left: { start:3, end:2, speed:"1" },
-  Right: { start:3, end:2, speed:"1" }
-};
-let pupilEditing = false;
-let lastFirebasePupils = { Left:null, Right:null };
-
-function validPupilCode(value) {
-  const code = String(value ?? "");
-  if (!/^[1-6][1-6][012]$/.test(code)) return false;
-  const a = Number(code[0]), b = Number(code[1]), r = code[2];
-  return b <= a && (a === b ? r === "0" : r !== "0");
-}
-
-function pupilCode(eye) {
-  const d = pupilDraft[eye];
-  const a = Number(d.start), b = Number(d.end);
-  if (!Number.isInteger(a) || !Number.isInteger(b) ||
-      a < 1 || a > 6 || b < 1 || b > 6 || b > a) return null;
-  return `${a}${b}${a === b ? "0" : d.speed}`;
-}
-
-function renderPupilDraft() {
-  for (const eye of ["Left", "Right"]) {
-    const d = pupilDraft[eye];
-    const start = document.getElementById(`pupil${eye}Start`);
-    const end = document.getElementById(`pupil${eye}End`);
-    if (document.activeElement !== start) start.value = d.start;
-    if (document.activeElement !== end) end.value = d.end;
-    const fixed = Number(d.start) === Number(d.end);
-    document.querySelectorAll(`[data-eye="${eye}"]`).forEach(button => {
-      button.classList.toggle("selected", !fixed && button.dataset.speed === d.speed);
-      button.disabled = fixed;
-    });
-    document.getElementById(`pupil${eye}Preview`).textContent =
-      pupilCode(eye) || "Invalid size";
-  }
-}
-
-function syncPupilControls(data) {
-  const left = String(data.pupilLeft ?? "");
-  const right = String(data.pupilRight ?? "");
-  document.getElementById("pupilSummary").textContent =
-    `L ${left || "--"} · R ${right || "--"}`;
-  // Do not overwrite partially entered settings while the section is open.
-  if (pupilEditing) return;
-  for (const [eye, code] of [["Left",left],["Right",right]]) {
-    if (!validPupilCode(code)) continue;
-    pupilDraft[eye] = {
-      start:Number(code[0]), end:Number(code[1]),
-      speed:code[2] === "2" ? "2" : "1"
-    };
-    lastFirebasePupils[eye] = code;
-  }
-  renderPupilDraft();
-}
-
-for (const eye of ["Left", "Right"]) {
-  for (const part of ["Start", "End"]) {
-    document.getElementById(`pupil${eye}${part}`).addEventListener("input", e => {
-      pupilEditing = true;
-      pupilDraft[eye][part.toLowerCase()] = e.target.value;
-      renderPupilDraft();
-    });
-  }
-}
-document.querySelectorAll("[data-eye][data-speed]").forEach(button => {
-  button.addEventListener("click", () => {
-    pupilEditing = true;
-    pupilDraft[button.dataset.eye].speed = button.dataset.speed;
-    renderPupilDraft();
-  });
-});
-
-document.getElementById("applyPupils").addEventListener("click", async () => {
-  const left = pupilCode("Left"), right = pupilCode("Right");
-  const feedback = document.getElementById("pupilFeedback");
-  if (!left || !right) {
-    feedback.textContent = "Use 1–6 mm; finish cannot exceed start.";
-    return;
-  }
-  try {
-    await roomRef.update({ pupilLeft:left, pupilRight:right });
-    pupilEditing = false;
-    feedback.textContent = `Applied: L ${left} · R ${right}`;
-    syncPupilControls({pupilLeft:left,pupilRight:right});
-  } catch (error) {
-    feedback.textContent = "Could not save pupils: " + error.message;
-  }
-});
-
-document.getElementById("pearlPupils").addEventListener("click", async () => {
-  const feedback = document.getElementById("pupilFeedback");
-  try {
-    await roomRef.update({ pupilLeft:"321", pupilRight:"321" });
-    pupilEditing = false;
-    feedback.textContent = "PEARL applied: both 321";
-    syncPupilControls({pupilLeft:"321",pupilRight:"321"});
-  } catch (error) {
-    feedback.textContent = "Could not apply PEARL: " + error.message;
-  }
-});
-
-document.getElementById("pupilDetails").addEventListener("toggle", event => {
-  if (!event.target.open) {
-    pupilEditing = false;
-    if (patient) syncPupilControls(patient);
-  }
-});
-renderPupilDraft();
-
 setInterval(updateControlDisplay, 1000);
   </script>
 </body>
