@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>iPad Monitor Control</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #050505;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+
+    .status {
+      color: #aaa;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .control-card {
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 14px;
+      background: #111;
+    }
+
+    .label {
+      font-size: 1rem;
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+
+    .value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      min-width: 90px;
+      background: #222;
+      color: white;
+      border: 1px solid #666;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:active {
+      background: #444;
+    }
+
+    .reset {
+      border-color: #ff5555;
+      color: #ff7777;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    .scenario {
+      color: #ffd400;
+      font-size: 1rem;
+      margin-top: 18px;
+    }
+    .top-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.timer-display {
+  color: #00ccff;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+    /* Pupil controls - isolated styles */
+    .pupil-panel { margin-top: 0; }
+    .pupil-panel summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; list-style: none; }
+    .pupil-panel summary::-webkit-details-marker { display: none; }
+    .pupil-summary { color: #00ccff; font-size: .88rem; text-align: right; }
+    .pupil-fields { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 15px; }
+    .pupil-eye { background: #1b1b1b; border-radius: 10px; padding: 10px; min-width: 0; }
+    .pupil-eye h3 { margin: 0 0 12px; font-size: 1rem; }
+    .pupil-eye label { display: block; color: #ccc; font-size: .82rem; margin: 8px 0 4px; }
+    .pupil-eye input { width: 100%; box-sizing: border-box; font-size: 1.15rem; padding: 10px 6px; background: #080808; color: white; border: 1px solid #666; border-radius: 7px; }
+    .pupil-speed { display: flex; gap: 5px; margin-top: 8px; }
+    .pupil-speed button { min-width: 0; padding: 10px 2px; font-size: .78rem; }
+    .pupil-speed button.selected { background: #075d76; border-color: #00ccff; }
+    .pupil-speed button:disabled { opacity: .45; }
+    .pupil-code { margin-top: 10px; color: #aaa; font-size: .85rem; }
+    .pupil-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .pupil-actions button { min-width: 0; padding: 12px 6px; }
+    .pupil-feedback { min-height: 1.2em; font-size: .85rem; margin-top: 9px; color: #aaa; }
+  </style>
+</head>
+
+<body>
+  <h1>Monitor Control</h1>
+  <div class="status" id="connectionStatus">Connecting...</div>
+<div class="scenario">
+    Scenario: <span id="scenarioValue">--</span>
+    <div class="timer-display">
+    Sim timer: <span id="timerValue">00:00</span>
+  </div>
+  </div>
+  <div class="grid">
+    <div class="control-card">
+  <div class="label">Simulation Control</div>
+
+  <div class="button-row">
+    <button onclick="showEndOfSimPopup()">End of Sim</button>
+    <button onclick="clearEndOfSimPopup()">Clear Message</button>
+  </div>
+</div>
+<div class="control-card">
+  <div class="label">Autoregulation Sim</div>
+
+  <div class="button-row">
+    <button onclick="simStartKinked()">Start SIM</button>
+    <button onclick="simBasicCare()">Optimise position</button>
+  </div>
+
+  <div class="button-row">
+    <button onclick="simAgitatedRise()">Agitation ICP rise</button>
+    <button onclick="simNoradEarly()">Norad before sedation</button>
+  </div>
+
+  <div class="button-row">
+    <button onclick="simSedationFirst()">Sedation increased</button>
+    <button onclick="simNoradAfterSedation()">Norad after sedation</button>
+  </div>
+</div>
+    <div class="control-card">
+      <div class="label">Heart Rate</div>
+      <div class="value"><span id="hrValue">--</span> bpm</div>
+      <div class="button-row">
+        <button onclick="changeValue('hr', -5)">HR -5</button>
+        <button onclick="changeValue('hr', 5)">HR +5</button>
+      </div>
+    </div>
+
+    <div class="control-card">
+      <div class="label">Systolic BP</div>
+      <div class="value"><span id="sysValue">--</span> mmHg</div>
+      <div class="button-row">
+        <button onclick="changeValue('systolic', -5)">Sys -5</button>
+        <button onclick="changeValue('systolic', 5)">Sys +5</button>
+      </div>
+    </div>
+
+    <div class="control-card">
+      <div class="label">Diastolic BP</div>
+      <div class="value"><span id="diaValue">--</span> mmHg</div>
+      <div class="button-row">
+        <button onclick="changeValue('diastolic', -5)">Dia -5</button>
+        <button onclick="changeValue('diastolic', 5)">Dia +5</button>
+      </div>
+    </div>
+
+    <div class="control-card">
+      <div class="label">ICP</div>
+      <div class="value"><span id="icpValue">--</span> mmHg</div>
+      <div class="button-row">
+        <button onclick="changeValue('icp', -1)">ICP -1</button>
+        <button onclick="changeValue('icp', 1)">ICP +1</button>
+      </div>
+    </div>
+<div class="control-card">
+  <div class="label">Respiratory Rate</div>
+  <div class="value"><span id="rrValue">--</span> /min</div>
+  <div class="button-row">
+    <button onclick="changeValue('rr', -1)">RR -1</button>
+    <button onclick="changeValue('rr', 1)">RR +1</button>
+  </div>
+</div>
+<div class="control-card">
+  <div class="label">SpO₂</div>
+  <div class="value"><span id="spo2Value">--</span> %</div>
+  <div class="button-row">
+    <button onclick="changeValue('spo2', -1)">SpO₂ -1</button>
+    <button onclick="changeValue('spo2', 1)">SpO₂ +1</button>
+  </div>
+</div>
+<div class="control-card">
+  <div class="label">EtCO₂</div>
+  <div class="value"><span id="etco2Value">--</span> kPa</div>
+  <div class="button-row">
+    <button onclick="changeValue('etco2', -0.1)">EtCO₂ -0.1</button>
+    <button onclick="changeValue('etco2', 0.1)">EtCO₂ +0.1</button>
+  </div>
+</div>
+  
+<div class="control-card">
+  <div class="label">Wave Controls</div>
+  <div class="button-row">
+    <button onclick="toggleWave('showIcpWave')">ICP</button>
+    <button onclick="toggleWave('showArtWave')">ART Line</button>
+    <button onclick="toggleWave('showEtco2Wave')">EtCO₂</button>
+  </div>
+</div>
+
+
+<!-- Independent pupil settings; existing monitor controls are unchanged -->
+<details class="control-card pupil-panel" id="pupilPanel">
+  <summary><span class="label" style="margin:0">Pupils ▾</span><span class="pupil-summary" id="pupilSummary">L -- · R --</span></summary>
+  <div class="pupil-fields">
+    <section class="pupil-eye">
+      <h3>Patient LEFT</h3>
+      <label for="pupilLeftStart">Start (mm)</label>
+      <input id="pupilLeftStart" type="number" inputmode="numeric" min="1" max="6" step="1" value="3">
+      <label for="pupilLeftFinish">Finish (mm)</label>
+      <input id="pupilLeftFinish" type="number" inputmode="numeric" min="1" max="6" step="1" value="2">
+      <label>Response</label>
+      <div class="pupil-speed" id="pupilLeftSpeed">
+        <button type="button" data-speed="1" onclick="selectPupilSpeed('Left', '1')">Brisk</button>
+        <button type="button" data-speed="2" onclick="selectPupilSpeed('Left', '2')">Sluggish</button>
+      </div>
+      <div class="pupil-code" id="pupilLeftCode">Code: 321</div>
+    </section>
+    <section class="pupil-eye">
+      <h3>Patient RIGHT</h3>
+      <label for="pupilRightStart">Start (mm)</label>
+      <input id="pupilRightStart" type="number" inputmode="numeric" min="1" max="6" step="1" value="3">
+      <label for="pupilRightFinish">Finish (mm)</label>
+      <input id="pupilRightFinish" type="number" inputmode="numeric" min="1" max="6" step="1" value="2">
+      <label>Response</label>
+      <div class="pupil-speed" id="pupilRightSpeed">
+        <button type="button" data-speed="1" onclick="selectPupilSpeed('Right', '1')">Brisk</button>
+        <button type="button" data-speed="2" onclick="selectPupilSpeed('Right', '2')">Sluggish</button>
+      </div>
+      <div class="pupil-code" id="pupilRightCode">Code: 321</div>
+    </section>
+  </div>
+  <div class="pupil-actions">
+    <button type="button" id="applyPupils" onclick="applyPupilSettings()">Apply Pupils</button>
+    <button type="button" onclick="resetPupilsPearl()">PEARL</button>
+  </div>
+  <div class="pupil-feedback" id="pupilFeedback" aria-live="polite"></div>
+</details>
+
+  </div>  
+
+<button class="reset" onclick="resetPatient()">Reset Baseline</button>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    // ------------------------------
+    // Firebase setup
+    // ------------------------------
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQOx2eQRwPFlHC2EmQREtdFYb9Mha7zuQ",
+      authDomain: "neuro-itu-monitor-sim.firebaseapp.com",
+      databaseURL: "https://neuro-itu-monitor-sim-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "neuro-itu-monitor-sim",
+      storageBucket: "neuro-itu-monitor-sim.firebasestorage.app",
+      messagingSenderId: "610257056899",
+      appId: "1:610257056899:web:4763a538136eaf95a8d7b6"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const database = firebase.database();
+    const roomRef = database.ref("simRooms/neuro1");
+
+    // ------------------------------
+    // Local state
+    // ------------------------------
+
+    let patient = {
+      hr: 86,
+      spo2: 98,
+      systolic: 120,
+      diastolic: 70,
+      icp: 14,
+      rr: 16,
+      etco2: 4.3,
+      showIcpWave: true,
+      showArtWave: true,
+      showEtco2Wave: true,
+      scenario: "Baseline",
+      sedationGiven: false,
+      timerSeconds: 0,
+      timerRunning: false,
+timerStartedAt: null,
+       pupilLeft: "321",
+       pupilRight: "321"
+    };
+
+    const baselinePatient = {
+      hr: 86,
+      spo2: 98,
+      systolic: 120,
+      diastolic: 70,
+      icp: 14,
+      rr: 16,
+      etco2: 4.3,
+      showIcpWave: true,
+      showArtWave: true,
+      showEtco2Wave: true,
+      scenario: "Baseline",
+      sedationGiven: false,
+      timerSeconds: 0,
+      timerRunning: false,
+timerStartedAt: null,
+       pupilLeft: "321",
+       pupilRight: "321"
+    };
+
+    // ------------------------------
+    // Listen for Firebase changes
+    // ------------------------------
+
+    roomRef.on("value", (snapshot) => {
+      const data = snapshot.val();
+
+      if (!data) {
+        document.getElementById("connectionStatus").textContent = "No data found";
+        return;
+      }
+
+      patient = data;
+
+      document.getElementById("connectionStatus").textContent = "Connected to neuro1";
+      updateControlDisplay();
+    });
+function formatTimer(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return (
+    String(minutes).padStart(2, "0") +
+    ":" +
+    String(remainingSeconds).padStart(2, "0")
+  );
+}
+    // ------------------------------
+    // Display update
+    // ------------------------------
+
+    function updateControlDisplay() {
+  document.getElementById("hrValue").textContent = patient.hr;
+  document.getElementById("sysValue").textContent = patient.systolic;
+  document.getElementById("diaValue").textContent = patient.diastolic;
+  document.getElementById("icpValue").textContent = patient.icp;
+  document.getElementById("rrValue").textContent = patient.rr;
+  document.getElementById("spo2Value").textContent = patient.spo2;
+  document.getElementById("etco2Value").textContent = Number(patient.etco2).toFixed(1);
+  document.getElementById("scenarioValue").textContent = patient.scenario;
+
+  let totalSeconds = patient.timerSeconds || 0;
+
+if (patient.timerRunning && patient.timerStartedAt) {
+  totalSeconds = Math.floor((Date.now() - patient.timerStartedAt) / 1000);
+}
+
+document.getElementById("timerValue").textContent =
+  formatTimer(totalSeconds);
+}
+
+    // ------------------------------
+    // Controls
+    // ------------------------------
+
+    function changeValue(parameter, amount) {
+      const updatedPatient = { ...patient };
+
+      updatedPatient[parameter] += amount;
+
+updatedPatient.hr = clamp(updatedPatient.hr, 0, 220);
+updatedPatient.systolic = clamp(updatedPatient.systolic, 30, 240);
+updatedPatient.diastolic = clamp(updatedPatient.diastolic, 20, 140);
+updatedPatient.icp = clamp(updatedPatient.icp, -5, 80);
+updatedPatient.rr = clamp(updatedPatient.rr, 0, 60);
+updatedPatient.spo2 = clamp(updatedPatient.spo2, 50, 100);
+updatedPatient.etco2 = clamp(updatedPatient.etco2, 1.0, 12.0);
+updatedPatient.etco2 = Math.round(updatedPatient.etco2 * 10) / 10;
+
+      if (updatedPatient.systolic <= updatedPatient.diastolic) {
+        updatedPatient.systolic = updatedPatient.diastolic + 5;
+      }
+
+      updatedPatient.scenario = "Manual control";
+
+      roomRef.update(updatedPatient);
+    }
+    function toggleWave(waveName) {
+  const updatedPatient = { ...patient };
+
+  updatedPatient[waveName] = !updatedPatient[waveName];
+  updatedPatient.scenario = "Manual wave control";
+
+  roomRef.update(updatedPatient);
+}
+function showEndOfSimPopup() {
+  roomRef.update({
+    monitorMessage: "END OF SIM",
+    showMonitorMessage: true
+  });
+}
+
+function clearEndOfSimPopup() {
+  roomRef.update({
+    monitorMessage: "",
+    showMonitorMessage: false
+  });
+}
+    function resetPatient() {
+  clearGradualChanges();
+  stopSimTimer();
+  roomRef.set(baselinePatient);
+}
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    // ------------------------------
+// Gradual Firebase updates maybe
+// ------------------------------
+
+let activeIntervals = [];
+let simTimerInterval = null;
+
+function clearGradualChanges() {
+  activeIntervals.forEach(interval => clearInterval(interval));
+  activeIntervals = [];
+}
+
+function writePatient(updatedPatient) {
+  patient = { ...patient, ...updatedPatient };
+  roomRef.update(patient);
+}
+
+function gradualChange(parameter, targetValue, stepAmount, delayMs) {
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    const updatedPatient = { ...patient };
+
+    if (updatedPatient[parameter] < targetValue) {
+      updatedPatient[parameter] = Math.min(updatedPatient[parameter] + stepAmount, targetValue);
+    } else {
+      updatedPatient[parameter] = Math.max(updatedPatient[parameter] - stepAmount, targetValue);
+    }
+
+    writePatient(updatedPatient);
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+function timedIntChangeOverTime(parameter, startValue, targetValue, totalMs) {
+  const startTime = Date.now();
+
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / totalMs, 1);
+
+    const newValue = Math.round(
+      startValue + ((targetValue - startValue) * progress)
+    );
+
+    const updatedPatient = { ...patient };
+    updatedPatient[parameter] = newValue;
+
+    writePatient(updatedPatient);
+
+    if (progress >= 1) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+    }
+  }, 1000);
+
+  activeIntervals.push(interval);
+}
+function gradualIntChangeOverTime(parameter, targetValue, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.abs(difference);
+
+  if (steps === 0) return;
+
+  const stepDirection = difference > 0 ? 1 : -1;
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    if (patient[parameter] === targetValue) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    const updatedPatient = { ...patient };
+    updatedPatient[parameter] += stepDirection;
+
+    writePatient(updatedPatient);
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+function timedDecimalChangeOverTime(parameter, startValue, targetValue, stepAmount, totalMs) {
+  const startTime = Date.now();
+
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / totalMs, 1);
+
+    const updatedPatient = { ...patient };
+
+    updatedPatient[parameter] =
+      startValue + ((targetValue - startValue) * progress);
+
+    updatedPatient[parameter] =
+      Math.round(updatedPatient[parameter] / stepAmount) * stepAmount;
+
+    updatedPatient[parameter] =
+      Math.round(updatedPatient[parameter] * 10) / 10;
+
+    writePatient(updatedPatient);
+
+    if (progress >= 1) {
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+    }
+  }, 1000);
+
+  activeIntervals.push(interval);
+}
+function gradualDecimalChangeOverTime(parameter, targetValue, stepAmount, totalMs) {
+  const startValue = patient[parameter];
+  const difference = targetValue - startValue;
+  const steps = Math.ceil(Math.abs(difference) / stepAmount);
+
+  if (steps === 0) return;
+
+  const delayMs = totalMs / steps;
+
+  const interval = setInterval(() => {
+    const updatedPatient = { ...patient };
+
+    if (Math.abs(updatedPatient[parameter] - targetValue) < stepAmount) {
+      updatedPatient[parameter] = targetValue;
+      writePatient(updatedPatient);
+
+      clearInterval(interval);
+      activeIntervals = activeIntervals.filter(item => item !== interval);
+      return;
+    }
+
+    if (updatedPatient[parameter] < targetValue) {
+      updatedPatient[parameter] += stepAmount;
+    } else {
+      updatedPatient[parameter] -= stepAmount;
+    }
+
+    updatedPatient[parameter] = Math.round(updatedPatient[parameter] * 10) / 10;
+
+    writePatient(updatedPatient);
+  }, delayMs);
+
+  activeIntervals.push(interval);
+}
+
+// ------------------------------
+// Sim timer
+// ------------------------------
+
+function startSimTimer() {
+  roomRef.update({
+    timerSeconds: 0,
+    timerRunning: true,
+    timerStartedAt: Date.now()
+  });
+}
+
+function stopSimTimer() {
+  roomRef.update({
+    timerRunning: false
+  });
+}
+
+// ------------------------------
+// Autoregulation Sim Logic
+// ------------------------------
+
+function simStartKinked() {
+  clearGradualChanges();
+  startSimTimer();
+
+  writePatient({
+    hr: 86,
+    spo2: 98,
+    systolic: 120,
+    diastolic: 70,
+    icp: 14,
+    rr: 16,
+    etco2: 4.,
+    scenario: "Start: deterioration over 2 minutes",
+    sedationGiven: false,
+    
+  });
+
+  const twoMinutes = 120000;
+
+  timedIntChangeOverTime("hr", 86, 88, twoMinutes);
+timedIntChangeOverTime("spo2", 98, 97, twoMinutes);
+timedIntChangeOverTime("systolic", 120, 125, twoMinutes);
+timedIntChangeOverTime("diastolic", 70, 65, twoMinutes);
+timedIntChangeOverTime("icp", 14, 26, twoMinutes);
+timedDecimalChangeOverTime("etco2", 4.8, 4.6, 0.1, twoMinutes);
+}
+
+function simBasicCare() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Basic nursing care: head up / neutral neck"
+  });
+
+  gradualChange("icp", clamp(patient.icp - 10, 0, 80), 1, 2000);
+ gradualChange("systolic", clamp(patient.systolic - 4, 50, 240), 2, 3000);
+gradualChange("diastolic", clamp(patient.diastolic - 2, 20, 140), 1, 3000);
+}
+
+function simAgitatedRise() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Awake / agitated: ICP rising",
+    sedationGiven: false
+  });
+
+  gradualChange("hr", clamp(patient.hr + 12, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic + 22, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 10, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 16, 0, 80), 2, 2000);
+  
+}
+
+function simNoradEarly() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Norad before sedation: ICP worsens"
+  });
+
+  gradualChange("systolic", clamp(patient.systolic + 25, 50, 240), 5, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 5, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp + 11, 0, 80), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+}
+
+function simSedationFirst() {
+  clearGradualChanges();
+
+  writePatient({
+    scenario: "Sedation increased: ICP improving",
+    sedationGiven: true
+  });
+
+  gradualChange("hr", clamp(patient.hr - 15, 30, 220), 3, 2000);
+  gradualChange("systolic", clamp(patient.systolic - 18, 50, 240), 3, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic - 8, 20, 140), 2, 2000);
+  gradualChange("icp", clamp(patient.icp - 14, 0, 80), 2, 2000);
+  gradualChange("etco2", clamp(patient.etco2 + 0.2, 1.0, 12.0), 0.1, 3000);
+}
+
+function simNoradAfterSedation() {
+  clearGradualChanges();
+
+  if (!patient.sedationGiven) {
+    simNoradEarly();
+    return;
+  }
+
+  writePatient({
+    scenario: "Norad after sedation: CPP improving"
+  });
+
+  gradualChange("systolic", clamp(patient.systolic + 24, 50, 240), 4, 2000);
+  gradualChange("diastolic", clamp(patient.diastolic + 12, 20, 140), 2, 2000);
+  gradualChange("hr", clamp(patient.hr - 4, 30, 220), 1, 3000);
+  gradualChange("icp", clamp(patient.icp - 2, 0, 80), 1, 4000);
+}
+
+// ------------------------------
+// Pupil controls (separate from existing monitor logic)
+// ------------------------------
+const pupilDraftSpeed = { Left: "1", Right: "1" };
+let pupilDraftDirty = false;
+let lastPupilFirebaseCodes = { Left: null, Right: null };
+let pupilWritePending = false;
+
+function pupilInput(eye, field) {
+  return document.getElementById("pupil" + eye + field);
+}
+
+function parsePupilDraft(eye) {
+  const startText = pupilInput(eye, "Start").value.trim();
+  const finishText = pupilInput(eye, "Finish").value.trim();
+  if (!/^[1-6]$/.test(startText) || !/^[1-6]$/.test(finishText)) return null;
+  const start = Number(startText), finish = Number(finishText);
+  if (finish > start) return null;
+  return `${start}${finish}${start === finish ? "0" : pupilDraftSpeed[eye]}`;
+}
+
+function renderPupilDraft() {
+  for (const eye of ["Left", "Right"]) {
+    const code = parsePupilDraft(eye);
+    const fixed = code && code[2] === "0";
+    document.getElementById("pupil" + eye + "Code").textContent =
+      code ? (fixed ? `Fixed · ${code}` : `Code: ${code}`) : "Invalid sizes";
+    for (const btn of document.querySelectorAll("#pupil" + eye + "Speed button")) {
+      btn.classList.toggle("selected", !fixed && btn.dataset.speed === pupilDraftSpeed[eye]);
+      btn.disabled = !!fixed;
+    }
+  }
+  document.getElementById("applyPupils").disabled =
+    !parsePupilDraft("Left") || !parsePupilDraft("Right") || pupilWritePending;
+}
+
+function selectPupilSpeed(eye, speed) {
+  pupilDraftSpeed[eye] = speed;
+  pupilDraftDirty = true;
+  renderPupilDraft();
+}
+
+function setPupilDraft(eye, code) {
+  if (!/^[1-6][1-6][012]$/.test(code)) return;
+  pupilInput(eye, "Start").value = code[0];
+  pupilInput(eye, "Finish").value = code[1];
+  if (code[2] !== "0") pupilDraftSpeed[eye] = code[2];
+}
+
+function syncPupilsFromFirebase(data) {
+  const left = String(data.pupilLeft ?? "321");
+  const right = String(data.pupilRight ?? "321");
+  document.getElementById("pupilSummary").textContent = `L ${left} · R ${right}`;
+  if (!pupilDraftDirty && !pupilWritePending) {
+    setPupilDraft("Left", left);
+    setPupilDraft("Right", right);
+    renderPupilDraft();
+  }
+  lastPupilFirebaseCodes = { Left: left, Right: right };
+}
+
+async function applyPupilSettings() {
+  const left = parsePupilDraft("Left"), right = parsePupilDraft("Right");
+  const feedback = document.getElementById("pupilFeedback");
+  if (!left || !right) {
+    feedback.textContent = "Enter whole numbers 1–6; finish cannot exceed start.";
+    return;
+  }
+  if (pupilWritePending) return;
+  pupilWritePending = true;
+  renderPupilDraft();
+  feedback.textContent = "Applying…";
+  try {
+    // Update ONLY pupil keys; never overwrite the monitor or timer.
+    await roomRef.update({ pupilLeft: left, pupilRight: right });
+    pupilDraftDirty = false;
+    feedback.textContent = "Pupils updated";
+  } catch (err) {
+    feedback.textContent = "Pupil update failed: " + err.message;
+  } finally {
+    pupilWritePending = false;
+    renderPupilDraft();
+  }
+}
+
+async function resetPupilsPearl() {
+  if (pupilWritePending) return;
+  pupilWritePending = true;
+  renderPupilDraft();
+  const feedback = document.getElementById("pupilFeedback");
+  try {
+    await roomRef.update({ pupilLeft: "321", pupilRight: "321" });
+    pupilDraftDirty = false;
+    setPupilDraft("Left", "321");
+    setPupilDraft("Right", "321");
+    feedback.textContent = "PEARL applied";
+  } catch (err) {
+    feedback.textContent = "PEARL update failed: " + err.message;
+  } finally {
+    pupilWritePending = false;
+    renderPupilDraft();
+  }
+}
+
+for (const eye of ["Left", "Right"]) {
+  for (const field of ["Start", "Finish"]) {
+    pupilInput(eye, field).addEventListener("input", () => {
+      pupilDraftDirty = true;
+      document.getElementById("pupilFeedback").textContent = "Unsaved pupil changes";
+      renderPupilDraft();
+    });
+  }
+}
+renderPupilDraft();
+
+setInterval(updateControlDisplay, 1000);
+  </script>
+</body>
+</html>
