@@ -1,15 +1,126 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Neuro1 Pupil Simulator</title>
 
-    <title>Neuro1 Pupil Simulator</title>
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: black;
+}
+
+#face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
+}
+
+/* Every image shares the same canvas */
+.face-image {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Closed eyelid overlays */
+.eyelid {
+    transition: transform 0.6s ease-in-out;
+    transform: translateY(0);
+}
+
+/* Lift the overlay upwards */
+.eyelid.open {
+    transform: translateY(-12%);
+}
+
+/* Invisible examination areas */
+.eye-touch {
+    position: absolute;
+    top: 30%;
+    height: 45%;
+    width: 35%;
+    z-index: 10;
+    touch-action: none;
+}
+
+#left-touch {
+    left: 7%;
+}
+
+#right-touch {
+    right: 7%;
+}
+</style>
 </head>
 
 <body>
-    <h1>Neuro1 Pupil Simulator</h1>
-    <p>Pupil simulation ready for development.</p>
+
+<div id="face">
+
+    <!-- Permanent background -->
+    <img class="face-image"
+         src="eyes-open.png"
+         alt="Patient eyes">
+
+    <!-- Closed eyelid overlays -->
+    <img id="left-lid"
+         class="face-image eyelid"
+         src="eyelid-left.png"
+         alt="">
+
+    <img id="right-lid"
+         class="face-image eyelid"
+         src="eyelid-right.png"
+         alt="">
+
+    <!-- Invisible touch areas -->
+    <div id="left-touch" class="eye-touch"></div>
+    <div id="right-touch" class="eye-touch"></div>
+
+</div>
+
+<script>
+function setupEye(touchId, eyelidId) {
+
+    const touch = document.getElementById(touchId);
+    const eyelid = document.getElementById(eyelidId);
+
+    function openEye(event) {
+        event.preventDefault();
+        touch.setPointerCapture(event.pointerId);
+        eyelid.classList.add("open");
+    }
+
+    function closeEye() {
+        eyelid.classList.remove("open");
+    }
+
+    touch.addEventListener("pointerdown", openEye);
+    touch.addEventListener("pointerup", closeEye);
+    touch.addEventListener("pointercancel", closeEye);
+    touch.addEventListener("lostpointercapture", closeEye);
+}
+
+setupEye("left-touch", "left-lid");
+setupEye("right-touch", "right-lid");
+</script>
+
 </body>
 </html>
