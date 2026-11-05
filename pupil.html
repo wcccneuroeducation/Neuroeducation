@@ -1,11 +1,13 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
 <meta name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
+
 <title>Neuro1 Pupil Simulator</title>
 
 <style>
@@ -23,52 +25,66 @@ html, body {
 
 #face {
     position: absolute;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     overflow: hidden;
     touch-action: none;
 }
 
-/* Every image shares the same canvas */
+/* All images use the same full-screen canvas */
 .face-image {
     position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: fill;
     pointer-events: none;
     user-select: none;
+    -webkit-user-drag: none;
 }
 
-/* Closed eyelid overlays */
+/* Moving eyelid overlays */
 .eyelid {
-    transition: transform 0.6s ease-in-out;
     transform: translateY(0);
+    transition: transform 0.4s ease-in-out;
 }
 
-/* Lift the overlay upwards */
 .eyelid.open {
-    transform: translateY(-12%);
+    transform: translateY(-35%);
+    transition-duration: 0.6s;
+}
+
+/* Stationary closed-eye overlay */
+.static-lid {
+    opacity: 1;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.static-lid.open {
+    opacity: 0;
+    transition-duration: 0.6s;
 }
 
 /* Invisible examination areas */
 .eye-touch {
     position: absolute;
     top: 30%;
-    height: 45%;
     width: 35%;
+    height: 45%;
     z-index: 10;
     touch-action: none;
+    cursor: pointer;
 }
 
-/* Patient's LEFT eye — screen right */
+/* Patient's LEFT eye = screen RIGHT */
 #left-touch {
     right: 7%;
 }
 
-/* Patient's RIGHT eye — screen left */
+/* Patient's RIGHT eye = screen LEFT */
 #right-touch {
     left: 7%;
 }
+
 </style>
 </head>
 
@@ -76,21 +92,40 @@ html, body {
 
 <div id="face">
 
-    <!-- Permanent background -->
-    <img class="face-image"
-         src="eyes-open.png"
-         alt="Patient eyes">
+    <!-- Permanent open-eye background -->
+    <img
+        class="face-image"
+        src="eyes-open.png"
+        alt="Patient eyes"
+    >
 
-    <!-- Closed eyelid overlays -->
-    <img id="left-lid"
-         class="face-image eyelid"
-         src="eyelid-left.png"
-         alt="">
+    <!-- PATIENT'S LEFT EYE (screen right) -->
 
-    <img id="right-lid"
-         class="face-image eyelid"
-         src="eyelid-right.png"
-         alt="">
+    <!-- Static closed-eye overlay -->
+    <img
+        id="left-static"
+        class="face-image static-lid"
+        src="eyelid-left-static.png"
+        alt=""
+    >
+
+    <!-- Moving eyelid and eyelashes -->
+    <img
+        id="left-lid"
+        class="face-image eyelid"
+        src="eyelid-left.png"
+        alt=""
+    >
+
+    <!-- PATIENT'S RIGHT EYE (screen left) -->
+
+    <!-- Moving eyelid only for now -->
+    <img
+        id="right-lid"
+        class="face-image eyelid"
+        src="eyelid-right.png"
+        alt=""
+    >
 
     <!-- Invisible touch areas -->
     <div id="left-touch" class="eye-touch"></div>
@@ -99,19 +134,39 @@ html, body {
 </div>
 
 <script>
-function setupEye(touchId, eyelidId) {
+
+function setupEye(touchId, eyelidId, staticId = null) {
 
     const touch = document.getElementById(touchId);
     const eyelid = document.getElementById(eyelidId);
 
+    const staticLid = staticId
+        ? document.getElementById(staticId)
+        : null;
+
     function openEye(event) {
         event.preventDefault();
+
         touch.setPointerCapture(event.pointerId);
+
+        // Move eyelid upwards
         eyelid.classList.add("open");
+
+        // Fade stationary overlay
+        if (staticLid) {
+            staticLid.classList.add("open");
+        }
     }
 
     function closeEye() {
+
+        // Return eyelid to closed position
         eyelid.classList.remove("open");
+
+        // Restore stationary overlay
+        if (staticLid) {
+            staticLid.classList.remove("open");
+        }
     }
 
     touch.addEventListener("pointerdown", openEye);
@@ -120,8 +175,12 @@ function setupEye(touchId, eyelidId) {
     touch.addEventListener("lostpointercapture", closeEye);
 }
 
-setupEye("left-touch", "left-lid");
+/* Patient's LEFT eye */
+setupEye("left-touch", "left-lid", "left-static");
+
+/* Patient's RIGHT eye */
 setupEye("right-touch", "right-lid");
+
 </script>
 
 </body>
