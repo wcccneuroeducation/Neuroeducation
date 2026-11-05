@@ -13,9 +13,6 @@
 <title>Neuro1 Pupil Simulator</title>
 
 <style>
-
-/* GENERAL PAGE SETTINGS */
-
 * {
     box-sizing: border-box;
     -webkit-user-select: none;
@@ -26,7 +23,6 @@
 
 html, body {
     margin: 0;
-    padding: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -35,19 +31,14 @@ html, body {
     overscroll-behavior: none;
 }
 
-/* MAIN FACE CONTAINER */
-
 #face {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
     overflow: hidden;
     touch-action: none;
 }
 
-/* ALL IMAGES SHARE EXACTLY THE SAME CANVAS */
-
+/* All images use the same canvas */
 .face-image {
     position: absolute;
     inset: 0;
@@ -55,28 +46,34 @@ html, body {
     height: 100%;
     object-fit: fill;
     pointer-events: none;
-    user-select: none;
-    -webkit-user-select: none;
     -webkit-user-drag: none;
-    -webkit-touch-callout: none;
 }
 
-/* STATIC EYELID OVERLAYS */
+/* Black pupil circles */
+.pupil {
+    position: absolute;
+    width: var(--pupil-size);
+    height: var(--pupil-size);
+    border-radius: 50%;
+    background: #030405;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
+}
 
+/* Static eyelids sit above pupils */
 .static-lid {
+    z-index: 3;
     opacity: 1;
     transition: opacity 0.5s ease-in-out;
-    will-change: opacity;
 }
-
-/* PRESS AND HOLD TO OPEN */
 
 .static-lid.open {
     opacity: 0;
-    transition: opacity 0.85s ease-in-out;
+    transition-duration: 0.85s;
 }
 
-/* Examination areas extend above the eyes */
+/* Invisible examination areas */
 .eye-touch {
     position: absolute;
     top: 5%;
@@ -85,23 +82,17 @@ html, body {
     z-index: 10;
     touch-action: none;
     cursor: pointer;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
 }
 
-/* PATIENT'S LEFT EYE = SCREEN RIGHT */
-
+/* Patient's LEFT = screen RIGHT */
 #left-touch {
     right: 7%;
 }
 
-/* PATIENT'S RIGHT EYE = SCREEN LEFT */
-
+/* Patient's RIGHT = screen LEFT */
 #right-touch {
     left: 7%;
 }
-
 </style>
 </head>
 
@@ -109,105 +100,118 @@ html, body {
 
 <div id="face">
 
-    <!-- PERMANENT OPEN-EYE BACKGROUND -->
+    <!-- Pupil-free background -->
+    <img class="face-image"
+         src="eyes-open-nopupils.png"
+         alt=""
+         draggable="false">
 
-    <img
-        class="face-image"
-        src="eyes-open.png"
-        alt=""
-        draggable="false"
-    >
+    <!-- Screen-left pupil: patient's RIGHT -->
+    <div id="pupil-screen-left" class="pupil"></div>
 
-    <!-- PATIENT'S LEFT EYE - SCREEN RIGHT -->
+    <!-- Screen-right pupil: patient's LEFT -->
+    <div id="pupil-screen-right" class="pupil"></div>
 
-    <img
-        id="left-static"
-        class="face-image static-lid"
-        src="eyelid-left-static.png"
-        alt=""
-        draggable="false"
-    >
+    <!-- Patient's LEFT eyelid -->
+    <img id="left-static"
+         class="face-image static-lid"
+         src="eyelid-left-static.png"
+         alt=""
+         draggable="false">
 
-    <!-- PATIENT'S RIGHT EYE - SCREEN LEFT -->
-    <!-- Using existing eyelid image temporarily -->
+    <!-- Patient's RIGHT eyelid -->
+    <img id="right-static"
+         class="face-image static-lid"
+         src="eyelid-right-static.png"
+         alt=""
+         draggable="false">
 
-    <img
-        id="right-static"
-        class="face-image static-lid"
-        src="eyelid-right.png"
-        alt=""
-        draggable="false"
-    >
-
-    <!-- INVISIBLE TOUCH AREAS -->
-
+    <!-- Touch areas -->
     <div id="left-touch" class="eye-touch"></div>
-    <div id="right-touch" class="eye-touch"></div>
+    <div id="right-touch" class="eye-touch">
 
 </div>
 
 <script>
 
-/* DISABLE SAFARI SELECTION AND LONG-PRESS MENUS */
+/* Pupil positions as percentages of full image */
+const pupilCenters = {
+    left:  { x: 19.52, y: 51.35 },
+    right: { x: 82.59, y: 52.29 }
+};
 
-document.addEventListener("contextmenu", function(event) {
-    event.preventDefault();
-});
+/*
+ * Initial pupil calibration:
+ * Assume iris diameter = approximately 12 mm.
+ * Adjust IRIS_DIAMETER_PERCENT after testing.
+ */
+const PUPIL_MM = 3;
+const IRIS_DIAMETER_PERCENT = 13;
 
-document.addEventListener("dragstart", function(event) {
-    event.preventDefault();
-});
+/* Position pupils */
+function positionPupils() {
+    const face = document.getElementById("face");
 
-document.addEventListener("selectstart", function(event) {
-    event.preventDefault();
-});
+    const irisDiameterPx =
+        face.clientWidth * IRIS_DIAMETER_PERCENT / 100;
 
-/* PREVENT DEFAULT TOUCH BEHAVIOUR ON THE SIMULATOR */
+    const pupilDiameterPx =
+        irisDiameterPx * (PUPIL_MM / 12);
+
+    const positions = [
+        ["pupil-screen-left", pupilCenters.left],
+        ["pupil-screen-right", pupilCenters.right]
+    ];
+
+    positions.forEach(([id, pos]) => {
+        const pupil = document.getElementById(id);
+
+        pupil.style.left = pos.x + "%";
+        pupil.style.top = pos.y + "%";
+        pupil.style.setProperty(
+            "--pupil-size",
+            pupilDiameterPx + "px"
+        );
+    });
+}
+
+window.addEventListener("resize", positionPupils);
+positionPupils();
+
+/* Disable iPhone selection and context menus */
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("dragstart", e => e.preventDefault());
+document.addEventListener("selectstart", e => e.preventDefault());
 
 document.getElementById("face").addEventListener(
     "touchstart",
-    function(event) {
-        event.preventDefault();
-    },
+    e => e.preventDefault(),
     { passive: false }
 );
 
-/* INDEPENDENT EYE CONTROLS */
-
+/* Independent press-and-hold eyelids */
 function setupEye(touchId, eyelidId) {
-
     const touch = document.getElementById(touchId);
     const eyelid = document.getElementById(eyelidId);
 
-    function openEye(event) {
+    touch.addEventListener("pointerdown", event => {
         event.preventDefault();
-
-        if (event.pointerId !== undefined) {
-            touch.setPointerCapture(event.pointerId);
-        }
-
+        touch.setPointerCapture(event.pointerId);
         eyelid.classList.add("open");
-    }
+    });
 
     function closeEye() {
         eyelid.classList.remove("open");
     }
 
-    touch.addEventListener("pointerdown", openEye);
     touch.addEventListener("pointerup", closeEye);
     touch.addEventListener("pointercancel", closeEye);
     touch.addEventListener("lostpointercapture", closeEye);
 }
 
-/* PATIENT'S LEFT EYE */
-
 setupEye("left-touch", "left-static");
-
-/* PATIENT'S RIGHT EYE */
-
 setupEye("right-touch", "right-static");
 
 </script>
-
 </body>
 </html>
