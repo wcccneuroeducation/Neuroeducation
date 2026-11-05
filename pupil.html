@@ -1,36 +1,53 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 
 <meta name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+      content="width=device-width, initial-scale=1,
+      viewport-fit=cover, user-scalable=no">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <title>Neuro1 Pupil Simulator</title>
 
 <style>
+
+/* GENERAL PAGE SETTINGS */
+
 * {
     box-sizing: border-box;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
     margin: 0;
+    padding: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
     background: black;
+    touch-action: none;
+    overscroll-behavior: none;
 }
+
+/* MAIN FACE CONTAINER */
 
 #face {
     position: absolute;
     inset: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     touch-action: none;
 }
 
-/* All images use the same full-screen canvas */
+/* ALL IMAGES SHARE EXACTLY THE SAME CANVAS */
+
 .face-image {
     position: absolute;
     inset: 0;
@@ -39,38 +56,28 @@ html, body {
     object-fit: fill;
     pointer-events: none;
     user-select: none;
+    -webkit-user-select: none;
     -webkit-user-drag: none;
+    -webkit-touch-callout: none;
 }
 
-/* Small initial eyelash movement */
-.eyelid {
-    transform: translateY(0);
-    opacity: 1;
-    transition:
-        transform 0.3s ease-in-out,
-        opacity 0.3s ease-in-out;
-}
+/* STATIC EYELID OVERLAYS */
 
-/* Short lift followed by complete disappearance */
-.eyelid.open {
-    transform: translateY(-5%);
-    opacity: 0;
-    transition:
-        transform 0.3s ease-out,
-        opacity 0.3s ease-out;
-}
-
-/* Stationary closed-eye overlay */
 .static-lid {
     opacity: 1;
     transition: opacity 0.5s ease-in-out;
+    will-change: opacity;
 }
+
+/* PRESS AND HOLD TO OPEN */
 
 .static-lid.open {
     opacity: 0;
     transition: opacity 0.85s ease-in-out;
 }
-/* Invisible examination areas */
+
+/* INVISIBLE TOUCH AREAS */
+
 .eye-touch {
     position: absolute;
     top: 30%;
@@ -79,14 +86,19 @@ html, body {
     z-index: 10;
     touch-action: none;
     cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
-/* Patient's LEFT eye = screen RIGHT */
+/* PATIENT'S LEFT EYE = SCREEN RIGHT */
+
 #left-touch {
     right: 7%;
 }
 
-/* Patient's RIGHT eye = screen LEFT */
+/* PATIENT'S RIGHT EYE = SCREEN LEFT */
+
 #right-touch {
     left: 7%;
 }
@@ -98,42 +110,38 @@ html, body {
 
 <div id="face">
 
-    <!-- Permanent open-eye background -->
+    <!-- PERMANENT OPEN-EYE BACKGROUND -->
+
     <img
         class="face-image"
         src="eyes-open.png"
-        alt="Patient eyes"
+        alt=""
+        draggable="false"
     >
 
-    <!-- PATIENT'S LEFT EYE (screen right) -->
+    <!-- PATIENT'S LEFT EYE - SCREEN RIGHT -->
 
-    <!-- Static closed-eye overlay -->
     <img
         id="left-static"
         class="face-image static-lid"
         src="eyelid-left-static.png"
         alt=""
+        draggable="false"
     >
 
-    <!-- Moving eyelid and eyelashes -->
-    <img
-        id="left-lid"
-        class="face-image eyelid"
-        src="eyelid-left.png"
-        alt=""
-    >
+    <!-- PATIENT'S RIGHT EYE - SCREEN LEFT -->
+    <!-- Using existing eyelid image temporarily -->
 
-    <!-- PATIENT'S RIGHT EYE (screen left) -->
-
-    <!-- Moving eyelid only for now -->
     <img
-        id="right-lid"
-        class="face-image eyelid"
+        id="right-static"
+        class="face-image static-lid"
         src="eyelid-right.png"
         alt=""
+        draggable="false"
     >
 
-    <!-- Invisible touch areas -->
+    <!-- INVISIBLE TOUCH AREAS -->
+
     <div id="left-touch" class="eye-touch"></div>
     <div id="right-touch" class="eye-touch"></div>
 
@@ -141,38 +149,49 @@ html, body {
 
 <script>
 
-function setupEye(touchId, eyelidId, staticId = null) {
+/* DISABLE SAFARI SELECTION AND LONG-PRESS MENUS */
+
+document.addEventListener("contextmenu", function(event) {
+    event.preventDefault();
+});
+
+document.addEventListener("dragstart", function(event) {
+    event.preventDefault();
+});
+
+document.addEventListener("selectstart", function(event) {
+    event.preventDefault();
+});
+
+/* PREVENT DEFAULT TOUCH BEHAVIOUR ON THE SIMULATOR */
+
+document.getElementById("face").addEventListener(
+    "touchstart",
+    function(event) {
+        event.preventDefault();
+    },
+    { passive: false }
+);
+
+/* INDEPENDENT EYE CONTROLS */
+
+function setupEye(touchId, eyelidId) {
 
     const touch = document.getElementById(touchId);
     const eyelid = document.getElementById(eyelidId);
 
-    const staticLid = staticId
-        ? document.getElementById(staticId)
-        : null;
-
     function openEye(event) {
         event.preventDefault();
 
-        touch.setPointerCapture(event.pointerId);
-
-        // Move eyelid upwards
-        eyelid.classList.add("open");
-
-        // Fade stationary overlay
-        if (staticLid) {
-            staticLid.classList.add("open");
+        if (event.pointerId !== undefined) {
+            touch.setPointerCapture(event.pointerId);
         }
+
+        eyelid.classList.add("open");
     }
 
     function closeEye() {
-
-        // Return eyelid to closed position
         eyelid.classList.remove("open");
-
-        // Restore stationary overlay
-        if (staticLid) {
-            staticLid.classList.remove("open");
-        }
     }
 
     touch.addEventListener("pointerdown", openEye);
@@ -181,11 +200,13 @@ function setupEye(touchId, eyelidId, staticId = null) {
     touch.addEventListener("lostpointercapture", closeEye);
 }
 
-/* Patient's LEFT eye */
-setupEye("left-touch", "left-lid", "left-static");
+/* PATIENT'S LEFT EYE */
 
-/* Patient's RIGHT eye */
-setupEye("right-touch", "right-lid");
+setupEye("left-touch", "left-static");
+
+/* PATIENT'S RIGHT EYE */
+
+setupEye("right-touch", "right-static");
 
 </script>
 
